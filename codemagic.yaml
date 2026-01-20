@@ -1,54 +1,87 @@
 workflows:
-  react-native-ios:
-    name: React Native iOS Build
-    max_build_duration: 120
+  react-native-ios-simulator:
+    name: React Native iOS Simulator Build
+    max_build_duration: 180
+    instance_type: mac_mini_m2  # Faster, recommended for RN
 
     environment:
       node: 20
       xcode: latest
       cocoapods: default
+      vars:
+        XCODE_WORKSPACE: "GrowteqFlowers.xcworkspace"  # Confirm this matches your actual workspace name after pod install
+        XCODE_SCHEME: "GrowteqFlowers"  # Usually matches target name
 
-  scripts:
-    - name: Install dependencies
-      script: |
-        npm install
-        cd ios
-        # Force clean Pods to avoid corruption
-        rm -rf Pods Podfile.lock
-        pod deintegrate || true
-        # Add modular headers globally to fix Firebase/Swift static lib issues
-        echo "use_modular_headers!" >> Podfile
-        pod install --repo-update
-        # Debug: Check if workspace exists after pod install
-        ls -la | grep .xcworkspace || echo "No xcworkspace found!"
-        cd ..
+    scripts:
+      - name: Clean project (optional but recommended)
+        script: |
+          rm -rf node_modules
+          npm cache clean --force
 
-    - name: Bundle React Native
-      script: |
-        npx react-native bundle \
-          --platform ios \
-          --dev false \
-          --entry-file index.js \
-          --bundle-output ios/main.jsbundle
+      - name: Install dependencies
+        script: |
+          npm install
+          cd ios
+          # Force clean to avoid any corrupted Pods state
+          rm -rf Pods Podfile.lock
+          pod deintegrate || true
+          # Add modular headers only if not already in Podfile (prevents duplicates)
+          if ! grep -q "use_modular_headers!" Podfile; then
+            echo "use_modular_headers!" >> Podfile
+          fi
+          pod install --repo-update
+          # Debug: Show full directory contents and workspace check
+          echo "Contents of ios/ after pod install:"
+          ls -la
+          if [ -f "$XCODE_WORKSPACE" ]; then
+            echo "Workspace found: $XCODE_WORKSPACE"
+          else
+            echo "No .xcworkspace found! Pod install likely failed to generate it."
+            exit 1  # Fail early if no workspace
+          fi
+          cd ..
 
-    - name: Build iOS Simulator App
-      script: |
-        cd ios
-        # Debug: List contents so we see the workspace name
-        ls -la
-        # Use full relative path from root (Codemagic runs from root)
-        xcodebuild build \
-          -workspace GrowteqFlowers.xcworkspace \
-          -scheme GrowteqFlowers \
-          -sdk iphonesimulator \
-          -configuration Release \
-          -destination 'generic/platform=iOS Simulator' \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO \
-          -derivedDataPath ../build
+      - name: Bundle React Native
+        script: |
+          npx react-native bundle \
+            --platform ios \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output ios/main.jsbundle
 
-  artifacts:
+      - name: Build iOS Simulator App
+        script: |
+          cd ios
+          # Clean previous build artifacts
+          xcodebuild clean \
+            -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release
+
+          # Build for simulator (unsigned)
+          xcodebuild build \
+            -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -sdk iphonesimulator \
+            -configuration Release \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=18.0' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -derivedDataPath build
+
+          # Debug: Show where the .app landed
+          echo "Simulator .app location:"
+          find build -name "*.app" || echo "No .app found!"
+
+    artifacts:
       - ios/build/**/*
       - build/**/*
-      - ios/*.xcworkspace  # Optional: include workspace if needed for debugging
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app
+      - ios/*.xcworkspace  # For debugging
+      - /tmp/xcodebuild_logs/*.log  # If any logs generated
+
+    publishing:
+      email:
+        recipients:
+          - manuga262000@gmail.com  # Optional: Get notified on success/failure
