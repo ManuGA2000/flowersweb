@@ -2,12 +2,12 @@ workflows:
   react-native-ios:
     name: React Native iOS Build
     max_build_duration: 120
+    working_directory: .
 
-  environment:
-    node: "18"
-    xcode: latest
-    cocoapods: default
-
+    environment:
+      node: "18"
+      xcode: latest
+      cocoapods: default
 
     scripts:
       - name: Install dependencies
