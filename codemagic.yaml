@@ -8,9 +8,6 @@ workflows:
       xcode: latest
       cocoapods: default
 
-    ios_signing:
-      method: automatic   # Let Codemagic manage signing
-
     scripts:
       - name: Install dependencies
         script: |
@@ -34,6 +31,7 @@ workflows:
             -configuration Release \
             -sdk iphoneos \
             -allowProvisioningUpdates \
+            -allowProvisioningDeviceRegistration \
             -archivePath ios/build/GrowteqFlowers.xcarchive \
             archive
 
