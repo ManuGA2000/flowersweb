@@ -8,44 +8,47 @@ workflows:
       xcode: latest
       cocoapods: default
 
-    scripts:
-      - name: Install dependencies
-        script: |
-          npm install
-          cd ios
-          pod install --repo-update
-          cd ..
+  scripts:
+    - name: Install dependencies
+      script: |
+        npm install
+        cd ios
+        # Force clean Pods to avoid corruption
+        rm -rf Pods Podfile.lock
+        pod deintegrate || true
+        # Add modular headers globally to fix Firebase/Swift static lib issues
+        echo "use_modular_headers!" >> Podfile
+        pod install --repo-update
+        # Debug: Check if workspace exists after pod install
+        ls -la | grep .xcworkspace || echo "No xcworkspace found!"
+        cd ..
 
-      - name: Bundle React Native
-        script: |
-          npx react-native bundle \
-            --platform ios \
-            --dev false \
-            --entry-file index.js \
-            --bundle-output ios/main.jsbundle
+    - name: Bundle React Native
+      script: |
+        npx react-native bundle \
+          --platform ios \
+          --dev false \
+          --entry-file index.js \
+          --bundle-output ios/main.jsbundle
 
-      - name: Build iOS Simulator App
-        script: |
-          cd ios
-          # Clean and reinstall Pods to fix any corruption
-          rm -rf Pods Podfile.lock
-          pod deintegrate || true
-          pod install --repo-update
+    - name: Build iOS Simulator App
+      script: |
+        cd ios
+        # Debug: List contents so we see the workspace name
+        ls -la
+        # Use full relative path from root (Codemagic runs from root)
+        xcodebuild build \
+          -workspace GrowteqFlowers.xcworkspace \
+          -scheme GrowteqFlowers \
+          -sdk iphonesimulator \
+          -configuration Release \
+          -destination 'generic/platform=iOS Simulator' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          -derivedDataPath ../build
 
-          cd ..
-
-          # Build for simulator (unsigned .app) - no signing flags needed
-          xcodebuild build \
-            -workspace ios/GrowteqFlowers.xcworkspace \
-            -scheme GrowteqFlowers \
-            -sdk iphonesimulator \
-            -configuration Release \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            -derivedDataPath build
-
-    artifacts:
-        - ios/build/**/*
-        - build/**/*
+  artifacts:
+      - ios/build/**/*
+      - build/**/*
+      - ios/*.xcworkspace  # Optional: include workspace if needed for debugging
