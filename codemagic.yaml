@@ -26,7 +26,7 @@ workflows:
 
       - name: Archive iOS App
         script: |
-          xcodebuild -workspace ios/GrowteqFlowers.xcworkspace \
+          xcodebuild -project ios/GrowteqFlowers.xcodeproj \
             -scheme GrowteqFlowers \
             -configuration Release \
             -sdk iphoneos \
