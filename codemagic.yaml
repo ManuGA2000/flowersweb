@@ -8,12 +8,15 @@ workflows:
       xcode: latest
       cocoapods: default
 
+    ios_signing:
+      method: automatic   # Let Codemagic manage signing
+
     scripts:
       - name: Install dependencies
         script: |
           npm install
           cd ios
-          pod install || true
+          pod install --repo-update
           cd ..
 
       - name: Bundle React Native
@@ -26,10 +29,11 @@ workflows:
 
       - name: Archive iOS App
         script: |
-          xcodebuild -project ios/GrowteqFlowers.xcodeproj \
+          xcodebuild -workspace ios/GrowteqFlowers.xcworkspace \
             -scheme GrowteqFlowers \
             -configuration Release \
             -sdk iphoneos \
+            -allowProvisioningUpdates \
             -archivePath ios/build/GrowteqFlowers.xcarchive \
             archive
 
