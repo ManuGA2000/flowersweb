@@ -1,0 +1,28 @@
+workflows:
+  react-native-workflow:
+    name: React Native Build
+    max_build_duration: 120
+    environment:
+      flutter: latest
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          cd ios && pod install && cd ..
+      - name: Build Android
+        script: |
+          npx react-native bundle --platform android --dev false
+      - name: Build iOS
+        script: |
+          npx react-native bundle --platform ios --dev false
+          xcodebuild -workspace ios/GrowteqFlowers.xcworkspace \
+            -scheme GrowteqFlowers \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ios/build \
+            archive
+    artifacts:
+      - ios/build/**/*
+      - android/app/build/outputs/**/*.apk

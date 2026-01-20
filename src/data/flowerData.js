@@ -1,0 +1,553 @@
+// Flower Product Data - Complete Catalog
+// src/data/flowerData.js
+
+export const FLOWER_TYPES = {
+  roses: 'roses',
+  chrysanthemums: 'chrysanthemums',
+  gypsophila: 'gypsophila',
+  lisianthus: 'lisianthus',
+  limonium: 'limonium',
+  carnation: 'carnation',
+  eucalyptus: 'eucalyptus',
+  'song-of-india': 'song-of-india',
+  'song-of-jamaica': 'song-of-jamaica',
+  eustoma: 'eustoma',
+};
+
+export const FLOWER_NAMES = {
+  roses: 'Roses',
+  chrysanthemums: 'Chrysanthemums',
+  gypsophila: 'Gypsophila',
+  lisianthus: 'Lisianthus',
+  limonium: 'Limonium',
+  carnation: 'Carnation',
+  eucalyptus: 'Eucalyptus',
+  'song-of-india': 'Song of India',
+  'song-of-jamaica': 'Song of Jamaica',
+  eustoma: 'Eustoma',
+};
+
+// Color Options for each flower type
+export const FLOWER_COLORS = {
+  roses: [
+    { id: 'red', name: 'Red', hex: '#DC143C', image: 'https://images.unsplash.com/photo-1518882605630-8eb548fe0eff?w=400' },
+    { id: 'white', name: 'White', hex: '#FFFAFA', image: 'https://images.unsplash.com/photo-1560769680-ba5e8b9e3c5b?w=400' },
+    { id: 'pink', name: 'Pink', hex: '#FFB6C1', image: 'https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400' },
+    { id: 'yellow', name: 'Yellow', hex: '#FFD700', image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400' },
+    { id: 'orange', name: 'Orange', hex: '#FF8C00', image: 'https://images.unsplash.com/photo-1518882605630-8eb548fe0eff?w=400' },
+    { id: 'peach', name: 'Peach', hex: '#FFDAB9', image: 'https://images.unsplash.com/photo-1496062031456-07b8f162a322?w=400' },
+    { id: 'lavender', name: 'Lavender', hex: '#E6E6FA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'coral', name: 'Coral', hex: '#FF7F50', image: 'https://images.unsplash.com/photo-1518882605630-8eb548fe0eff?w=400' },
+    { id: 'burgundy', name: 'Burgundy', hex: '#800020', image: 'https://images.unsplash.com/photo-1518882605630-8eb548fe0eff?w=400' },
+    { id: 'cream', name: 'Cream', hex: '#FFFDD0', image: 'https://images.unsplash.com/photo-1560769680-ba5e8b9e3c5b?w=400' },
+    { id: 'bicolor-red-white', name: 'Red & White', hex: '#DC143C', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1518882605630-8eb548fe0eff?w=400' },
+    { id: 'bicolor-pink-white', name: 'Pink & White', hex: '#FFB6C1', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400' },
+  ],
+  
+  chrysanthemums: [
+    { id: 'white', name: 'White', hex: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'yellow', name: 'Yellow', hex: '#FFD700', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'hot-pink', name: 'Hot Pink', hex: '#FF69B4', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'light-pink', name: 'Light Pink', hex: '#FFB6C1', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'white-pink-center', name: 'White Pink Center', hex: '#FFFAFA', bicolor: '#FFB6C1', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'white-dark-center', name: 'White Dark Center', hex: '#FFFAFA', bicolor: '#4A0404', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'bicolor', name: 'Bicolor Maroon/White', hex: '#800000', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'orange', name: 'Orange', hex: '#FF8C00', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'white-green-center', name: 'White Green Center', hex: '#FFFAFA', bicolor: '#90EE90', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'green', name: 'Green', hex: '#90EE90', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'lavender', name: 'Lavender', hex: '#E6E6FA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'golden-yellow', name: 'Golden Yellow', hex: '#DAA520', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+  ],
+  
+  gypsophila: [
+    { id: 'white', name: 'White', hex: '#FFFAFA', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'pink', name: 'Pink', hex: '#FFB6C1', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'light-pink', name: 'Light Pink', hex: '#FFE4E1', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'purple', name: 'Purple', hex: '#9370DB', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'blue', name: 'Blue', hex: '#6495ED', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'yellow', name: 'Yellow', hex: '#FFD700', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'orange', name: 'Orange', hex: '#FF8C00', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'red', name: 'Red', hex: '#DC143C', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'lavender', name: 'Lavender', hex: '#E6E6FA', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'green', name: 'Green', hex: '#90EE90', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'peach', name: 'Peach', hex: '#FFDAB9', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'rainbow', name: 'Rainbow Mix', hex: '#FF0000', multicolor: true, image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+  ],
+  
+  lisianthus: [
+    { id: 'white', name: 'White', hex: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'pink', name: 'Pink', hex: '#FFB6C1', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'purple', name: 'Purple', hex: '#9370DB', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'lavender', name: 'Lavender', hex: '#E6E6FA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'champagne', name: 'Champagne', hex: '#F7E7CE', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'peach', name: 'Peach', hex: '#FFDAB9', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'green', name: 'Green', hex: '#90EE90', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'blue', name: 'Blue', hex: '#6495ED', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'bicolor-purple', name: 'Bicolor Purple', hex: '#9370DB', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'bicolor-pink', name: 'Bicolor Pink', hex: '#FFB6C1', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'cream', name: 'Cream', hex: '#FFFDD0', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'rose', name: 'Rose', hex: '#FF007F', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+  ],
+  
+  limonium: [
+    { id: 'purple', name: 'Purple', hex: '#9370DB', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'white', name: 'White', hex: '#FFFAFA', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'pink', name: 'Pink', hex: '#FFB6C1', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'blue', name: 'Blue', hex: '#6495ED', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'yellow', name: 'Yellow', hex: '#FFD700', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'lavender', name: 'Lavender', hex: '#E6E6FA', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'peach', name: 'Peach', hex: '#FFDAB9', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'hot-pink', name: 'Hot Pink', hex: '#FF69B4', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'orange', name: 'Orange', hex: '#FF8C00', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'green', name: 'Green', hex: '#90EE90', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'red', name: 'Red', hex: '#DC143C', image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+    { id: 'mixed', name: 'Mixed', hex: '#FF0000', multicolor: true, image: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400' },
+  ],
+  
+  carnation: [
+    { id: 'red', name: 'Red', hex: '#DC143C', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'white', name: 'White', hex: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'pink', name: 'Pink', hex: '#FFB6C1', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'yellow', name: 'Yellow', hex: '#FFD700', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'orange', name: 'Orange', hex: '#FF8C00', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'purple', name: 'Purple', hex: '#9370DB', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'green', name: 'Green', hex: '#90EE90', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'burgundy', name: 'Burgundy', hex: '#800020', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'peach', name: 'Peach', hex: '#FFDAB9', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'bicolor-red', name: 'Bicolor Red', hex: '#DC143C', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'bicolor-pink', name: 'Bicolor Pink', hex: '#FFB6C1', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'cream', name: 'Cream', hex: '#FFFDD0', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+  ],
+  
+  eucalyptus: [
+    { id: 'silver-dollar', name: 'Silver Dollar', hex: '#C0C0C0', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'seeded', name: 'Seeded', hex: '#808080', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'baby-blue', name: 'Baby Blue', hex: '#89CFF0', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'willow', name: 'Willow', hex: '#9ACD32', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'parvifolia', name: 'Parvifolia', hex: '#228B22', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'gunnii', name: 'Gunnii', hex: '#3CB371', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'spiral', name: 'Spiral', hex: '#2E8B57', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'populus', name: 'Populus', hex: '#6B8E23', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'true-blue', name: 'True Blue', hex: '#4682B4', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'cinerea', name: 'Cinerea', hex: '#708090', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'nicholii', name: 'Nicholii', hex: '#556B2F', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'preserved', name: 'Preserved', hex: '#8FBC8F', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+  ],
+  
+  'song-of-india': [
+    { id: 'green-yellow', name: 'Green & Yellow', hex: '#9ACD32', bicolor: '#FFD700', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'green', name: 'Green', hex: '#228B22', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'variegated', name: 'Variegated', hex: '#9ACD32', bicolor: '#FFFACD', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'lime', name: 'Lime', hex: '#32CD32', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'gold', name: 'Gold', hex: '#FFD700', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'cream-edge', name: 'Cream Edge', hex: '#228B22', bicolor: '#FFFDD0', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+  ],
+  
+  'song-of-jamaica': [
+    { id: 'green', name: 'Green', hex: '#228B22', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'variegated', name: 'Variegated', hex: '#9ACD32', bicolor: '#FFFACD', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'lime-green', name: 'Lime Green', hex: '#32CD32', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'dark-green', name: 'Dark Green', hex: '#006400', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'yellow-edge', name: 'Yellow Edge', hex: '#228B22', bicolor: '#FFD700', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+    { id: 'cream', name: 'Cream', hex: '#FFFDD0', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400' },
+  ],
+  
+  eustoma: [
+    { id: 'white', name: 'White', hex: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'pink', name: 'Pink', hex: '#FFB6C1', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'purple', name: 'Purple', hex: '#9370DB', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'lavender', name: 'Lavender', hex: '#E6E6FA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'champagne', name: 'Champagne', hex: '#F7E7CE', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'peach', name: 'Peach', hex: '#FFDAB9', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'green', name: 'Green', hex: '#90EE90', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'blue', name: 'Blue', hex: '#6495ED', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'bicolor-purple', name: 'Bicolor Purple', hex: '#9370DB', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'bicolor-pink', name: 'Bicolor Pink', hex: '#FFB6C1', bicolor: '#FFFAFA', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'cream', name: 'Cream', hex: '#FFFDD0', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+    { id: 'rose', name: 'Rose', hex: '#FF007F', image: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400' },
+  ],
+};
+
+// Categories for Navigation
+export const CATEGORIES = [
+  { id: 'all', name: 'All Flowers', icon: 'flower-tulip-outline', description: 'Browse all flowers' },
+  { id: 'roses', name: 'Roses', icon: 'flower', description: 'Premium quality roses' },
+  { id: 'chrysanthemums', name: 'Chrysanthemums', icon: 'flower-outline', description: 'Fresh chrysanthemums' },
+  { id: 'gypsophila', name: 'Gypsophila', icon: 'flower-tulip', description: "Baby's breath flowers" },
+  { id: 'lisianthus', name: 'Lisianthus', icon: 'flower-poppy', description: 'Elegant lisianthus' },
+  { id: 'limonium', name: 'Limonium', icon: 'flower-outline', description: 'Statice flowers' },
+  { id: 'carnation', name: 'Carnation', icon: 'flower', description: 'Colorful carnations' },
+  { id: 'eucalyptus', name: 'Eucalyptus', icon: 'leaf', description: 'Fresh eucalyptus greens' },
+  { id: 'song-of-india', name: 'Song of India', icon: 'palm-tree', description: 'Decorative foliage' },
+  { id: 'song-of-jamaica', name: 'Song of Jamaica', icon: 'palm-tree', description: 'Tropical foliage' },
+  { id: 'eustoma', name: 'Eustoma', icon: 'flower-tulip', description: 'Beautiful eustoma' },
+];
+
+// Sample Products with base prices (per stem)
+export const PRODUCTS = [
+  // Roses
+  {
+    id: 'rose-red',
+    name: 'Red Roses',
+    type: 'roses',
+    categoryId: 'roses',
+    description: 'Premium quality red roses, perfect for expressing love and passion. Fresh cut with long-lasting beauty.',
+    basePrice: 15,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.8,
+    reviews: 256,
+    tags: ['bestseller', 'romantic', 'premium'],
+  },
+  {
+    id: 'rose-white',
+    name: 'White Roses',
+    type: 'roses',
+    categoryId: 'roses',
+    description: 'Pure white roses symbolizing innocence and elegance. Perfect for weddings and special occasions.',
+    basePrice: 15,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.7,
+    reviews: 189,
+    tags: ['wedding', 'elegant', 'premium'],
+  },
+  {
+    id: 'rose-pink',
+    name: 'Pink Roses',
+    type: 'roses',
+    categoryId: 'roses',
+    description: 'Delicate pink roses representing grace and gratitude. A gentle expression of admiration.',
+    basePrice: 15,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.6,
+    reviews: 142,
+    tags: ['gentle', 'gratitude'],
+  },
+  {
+    id: 'rose-yellow',
+    name: 'Yellow Roses',
+    type: 'roses',
+    categoryId: 'roses',
+    description: 'Bright yellow roses symbolizing friendship and joy. Spread happiness with these sunny blooms.',
+    basePrice: 15,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.5,
+    reviews: 98,
+    tags: ['friendship', 'cheerful'],
+  },
+  
+  // Chrysanthemums
+  {
+    id: 'chrys-white',
+    name: 'White Chrysanthemums',
+    type: 'chrysanthemums',
+    categoryId: 'chrysanthemums',
+    description: 'Classic white chrysanthemums with full blooms. Long-lasting and versatile for any arrangement.',
+    basePrice: 12,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.6,
+    reviews: 167,
+    tags: ['classic', 'versatile'],
+  },
+  {
+    id: 'chrys-yellow',
+    name: 'Yellow Chrysanthemums',
+    type: 'chrysanthemums',
+    categoryId: 'chrysanthemums',
+    description: 'Vibrant yellow chrysanthemums bringing sunshine to any space.',
+    basePrice: 12,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.5,
+    reviews: 89,
+    tags: ['bright', 'cheerful'],
+  },
+  {
+    id: 'chrys-pink',
+    name: 'Pink Chrysanthemums',
+    type: 'chrysanthemums',
+    categoryId: 'chrysanthemums',
+    description: 'Beautiful pink chrysanthemums in various shades.',
+    basePrice: 12,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.4,
+    reviews: 76,
+    tags: ['elegant'],
+  },
+  
+  // Gypsophila
+  {
+    id: 'gyps-white',
+    name: 'White Gypsophila',
+    type: 'gypsophila',
+    categoryId: 'gypsophila',
+    description: "Delicate white baby's breath, perfect as filler or standalone bouquets.",
+    basePrice: 8,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.7,
+    reviews: 234,
+    tags: ['filler', 'delicate', 'popular'],
+  },
+  {
+    id: 'gyps-pink',
+    name: 'Pink Gypsophila',
+    type: 'gypsophila',
+    categoryId: 'gypsophila',
+    description: 'Tinted pink gypsophila for a romantic touch.',
+    basePrice: 10,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.6,
+    reviews: 145,
+    tags: ['tinted', 'romantic'],
+  },
+  {
+    id: 'gyps-rainbow',
+    name: 'Rainbow Gypsophila',
+    type: 'gypsophila',
+    categoryId: 'gypsophila',
+    description: 'Colorful mix of tinted gypsophila in multiple colors.',
+    basePrice: 12,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.8,
+    reviews: 178,
+    tags: ['colorful', 'trending'],
+  },
+  
+  // Lisianthus
+  {
+    id: 'lisi-white',
+    name: 'White Lisianthus',
+    type: 'lisianthus',
+    categoryId: 'lisianthus',
+    description: 'Elegant white lisianthus with rose-like petals.',
+    basePrice: 25,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.9,
+    reviews: 145,
+    tags: ['premium', 'elegant'],
+  },
+  {
+    id: 'lisi-purple',
+    name: 'Purple Lisianthus',
+    type: 'lisianthus',
+    categoryId: 'lisianthus',
+    description: 'Stunning purple lisianthus for sophisticated arrangements.',
+    basePrice: 25,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.8,
+    reviews: 112,
+    tags: ['sophisticated'],
+  },
+  
+  // Limonium
+  {
+    id: 'limo-purple',
+    name: 'Purple Limonium',
+    type: 'limonium',
+    categoryId: 'limonium',
+    description: 'Classic purple statice, excellent as filler flower.',
+    basePrice: 6,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.5,
+    reviews: 98,
+    tags: ['filler', 'dried'],
+  },
+  {
+    id: 'limo-mixed',
+    name: 'Mixed Limonium',
+    type: 'limonium',
+    categoryId: 'limonium',
+    description: 'Colorful mix of limonium in various shades.',
+    basePrice: 7,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.4,
+    reviews: 67,
+    tags: ['mixed', 'colorful'],
+  },
+  
+  // Carnation
+  {
+    id: 'carn-red',
+    name: 'Red Carnation',
+    type: 'carnation',
+    categoryId: 'carnation',
+    description: 'Classic red carnations, long-lasting and vibrant.',
+    basePrice: 8,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.6,
+    reviews: 189,
+    tags: ['classic', 'long-lasting'],
+  },
+  {
+    id: 'carn-mixed',
+    name: 'Mixed Carnations',
+    type: 'carnation',
+    categoryId: 'carnation',
+    description: 'Beautiful assortment of carnation colors.',
+    basePrice: 8,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.5,
+    reviews: 134,
+    tags: ['assorted'],
+  },
+  
+  // Eucalyptus
+  {
+    id: 'euca-silver',
+    name: 'Silver Dollar Eucalyptus',
+    type: 'eucalyptus',
+    categoryId: 'eucalyptus',
+    description: 'Popular eucalyptus with round silver-green leaves.',
+    basePrice: 10,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.8,
+    reviews: 267,
+    tags: ['popular', 'greenery'],
+  },
+  {
+    id: 'euca-seeded',
+    name: 'Seeded Eucalyptus',
+    type: 'eucalyptus',
+    categoryId: 'eucalyptus',
+    description: 'Eucalyptus with decorative seed pods.',
+    basePrice: 12,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.7,
+    reviews: 156,
+    tags: ['textured', 'unique'],
+  },
+  
+  // Song of India
+  {
+    id: 'soi-variegated',
+    name: 'Song of India',
+    type: 'song-of-india',
+    categoryId: 'song-of-india',
+    description: 'Variegated foliage with green and yellow stripes.',
+    basePrice: 8,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.5,
+    reviews: 78,
+    tags: ['foliage', 'tropical'],
+  },
+  
+  // Song of Jamaica
+  {
+    id: 'soj-green',
+    name: 'Song of Jamaica',
+    type: 'song-of-jamaica',
+    categoryId: 'song-of-jamaica',
+    description: 'Lush green tropical foliage for arrangements.',
+    basePrice: 8,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.4,
+    reviews: 56,
+    tags: ['foliage', 'tropical'],
+  },
+  
+  // Eustoma
+  {
+    id: 'eust-white',
+    name: 'White Eustoma',
+    type: 'eustoma',
+    categoryId: 'eustoma',
+    description: 'Delicate white eustoma flowers, similar to lisianthus.',
+    basePrice: 22,
+    unit: 'stem',
+    inStock: true,
+    featured: true,
+    rating: 4.8,
+    reviews: 134,
+    tags: ['delicate', 'premium'],
+  },
+  {
+    id: 'eust-pink',
+    name: 'Pink Eustoma',
+    type: 'eustoma',
+    categoryId: 'eustoma',
+    description: 'Soft pink eustoma for romantic arrangements.',
+    basePrice: 22,
+    unit: 'stem',
+    inStock: true,
+    featured: false,
+    rating: 4.7,
+    reviews: 98,
+    tags: ['romantic'],
+  },
+];
+
+// Helper function to get colors for a product
+export const getProductColors = (productType) => {
+  return FLOWER_COLORS[productType] || [];
+};
+
+// Helper function to get product by ID
+export const getProductById = (productId) => {
+  return PRODUCTS.find(p => p.id === productId);
+};
+
+// Helper function to get products by category
+export const getProductsByCategory = (categoryId) => {
+  if (categoryId === 'all') return PRODUCTS;
+  return PRODUCTS.filter(p => p.categoryId === categoryId);
+};
+
+// Helper function to search products
+export const searchProducts = (query) => {
+  const searchLower = query.toLowerCase();
+  return PRODUCTS.filter(p => 
+    p.name.toLowerCase().includes(searchLower) ||
+    p.description.toLowerCase().includes(searchLower) ||
+    p.tags.some(tag => tag.toLowerCase().includes(searchLower))
+  );
+};
+
+export default {
+  FLOWER_TYPES,
+  FLOWER_NAMES,
+  FLOWER_COLORS,
+  CATEGORIES,
+  PRODUCTS,
+  getProductColors,
+  getProductById,
+  getProductsByCategory,
+  searchProducts,
+};

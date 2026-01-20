@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "184126602948",
+    "project_id": "enterprise-app-mgmt",
+    "storage_bucket": "enterprise-app-mgmt.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:184126602948:android:33c9a5ce67e96745641391",
+        "android_client_info": {
+          "package_name": "com.growteqflowers"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "184126602948-et4peq5m56adsn2d838942a6airl98hd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHT0cVAhSWW-YDllKSIZSlXCk2Xq9BzqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "184126602948-et4peq5m56adsn2d838942a6airl98hd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
