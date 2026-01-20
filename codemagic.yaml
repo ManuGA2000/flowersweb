@@ -5,7 +5,7 @@ workflows:
     working_directory: .
 
     environment:
-      node: "18"
+      node: 20
       xcode: latest
       cocoapods: default
 
