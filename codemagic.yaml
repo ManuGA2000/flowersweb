@@ -1,11 +1,11 @@
 workflows:
   react-native-ios:
-    name: React Native iOS
+    name: React Native iOS Build
     max_build_duration: 120
+
     environment:
-      node: "18"                # Use Node 18
-      npm: default
-      xcode: latest             # iOS build
+      node: "18"
+      xcode: latest
       cocoapods: default
       working_directory: .
 
@@ -17,17 +17,21 @@ workflows:
           pod install
           cd ..
 
-      - name: Bundle React Native for iOS
+      - name: Bundle React Native
         script: |
-          npx react-native bundle --platform ios --dev false --entry-file index.js --bundle-output ios/main.jsbundle
+          npx react-native bundle \
+            --platform ios \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output ios/main.jsbundle
 
-      - name: Build iOS
+      - name: Archive iOS App
         script: |
           xcodebuild -workspace ios/GrowteqFlowers.xcworkspace \
             -scheme GrowteqFlowers \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath ios/build \
+            -archivePath ios/build/GrowteqFlowers.xcarchive \
             archive
 
     artifacts:
