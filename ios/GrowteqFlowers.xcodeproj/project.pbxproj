@@ -301,8 +301,16 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = GrowteqFlowers;
-				SWIFT_VERSION = 5.0;
 				SWIFT_OBJC_BRIDGING_HEADER = "GrowteqFlowers/GrowteqFlowers-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				HEADER_SEARCH_PATHS = (
+				"$(inherited)",
+				"\"$(SRCROOT)/../node_modules/react-native/React/**\"",
+				"\"$(PODS_ROOT)/Headers/Public/React-Core\"",
+				"\"$(PODS_ROOT)/Headers/Public/React-RCTAppDelegate\"",
+				"\"$(PODS_ROOT)/Headers/Public/ReactAppDependencyProvider\"",
+				"\"$(PODS_ROOT)/Headers/Public/ReactCommon\"",
+				);
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
