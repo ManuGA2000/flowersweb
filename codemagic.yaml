@@ -66,6 +66,7 @@ workflows:
             CODE_SIGNING_ALLOWED=NO \
             SWIFT_VERSION=5.0 \
             SWIFT_OBJC_BRIDGING_HEADER="GrowteqFlowers/GrowteqFlowers-Bridging-Header.h" \
+            OTHER_SWIFT_FLAGS="-D SWIFT_PACKAGE" \
             -derivedDataPath build
 
           echo "=== Searching for .app ==="
@@ -79,6 +80,8 @@ workflows:
               plutil -p "$APP_PATH/Info.plist"
             else
               echo "No Info.plist in .app - build incomplete"
+              # Extra debug: list contents of .app folder
+              ls -la "$APP_PATH"
             fi
           else
             echo "No .app found"
