@@ -22,18 +22,15 @@ workflows:
         script: |
           npm install
           cd ios
-          # Thorough clean
           rm -rf Pods Podfile.lock
           pod deintegrate || true
-          # No auto-append needed anymore – use_modular_headers! is in Podfile
           pod install --repo-update
-          # Debug output
           echo "=== ios/ directory contents after pod install ==="
           ls -la
           if ls *.xcworkspace >/dev/null 2>&1; then
             echo "Workspace found: $(ls *.xcworkspace)"
           else
-            echo "ERROR: No .xcworkspace generated after pod install! Check Podfile syntax."
+            echo "ERROR: No .xcworkspace!"
             exit 1
           fi
           cd ..
@@ -52,8 +49,7 @@ workflows:
           xcodebuild clean \
             -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
-            -configuration Release \
-            || echo "Clean failed - continuing"
+            -configuration Release
 
           xcodebuild build \
             -workspace "$XCODE_WORKSPACE" \
@@ -64,24 +60,28 @@ workflows:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            SWIFT_VERSION=5.0 \
             -derivedDataPath build
 
-          echo "=== Build finished. Searching for .app bundles ==="
-          find . -name "*.app" -type d 2>/dev/null || echo "No .app found in build dir"
+          echo "=== Searching for .app ==="
+          find . -name "*.app" -type d 2>/dev/null
 
-          echo "=== Checking DerivedData fallback ==="
-          find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d 2>/dev/null || echo "No .app in DerivedData"
+          APP_PATH=$(find build/Build/Products/Release-iphonesimulator -name "*.app" -type d | head -1)
+          if [ -n "$APP_PATH" ]; then
+            echo "Found app at $APP_PATH"
+            if [ -f "$APP_PATH/Info.plist" ]; then
+              echo "Info.plist exists! Contents:"
+              plutil -p "$APP_PATH/Info.plist"
+            else
+              echo "No Info.plist in .app - build incomplete"
+            fi
+          else
+            echo "No .app found"
+          fi
 
     artifacts:
       - ios/build/**/*
       - build/**/*
       - build/Build/Products/Release-iphonesimulator/*.app
-      - build/Build/Products/Release-iphonesimulator/**/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app
       - ios/*.xcworkspace
-      - ios/Podfile.lock
-
-    publishing:
-      email:
-        recipients:
-          - manuga262000@gail.com  # Optional – change to yours
