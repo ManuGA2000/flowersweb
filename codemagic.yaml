@@ -65,6 +65,7 @@ workflows:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             SWIFT_VERSION=5.0 \
+            SWIFT_OBJC_BRIDGING_HEADER="GrowteqFlowers/GrowteqFlowers-Bridging-Header.h" \
             -derivedDataPath build
 
           echo "=== Searching for .app ==="
