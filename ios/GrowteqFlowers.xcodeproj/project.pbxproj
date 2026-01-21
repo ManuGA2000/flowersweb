@@ -245,7 +245,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ABC1234567890DEF12345678 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = ABC1234567890DEF12345678 /* AppDelegate.mm */; };
+				ABC1234567890DEF12345678 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = ABC1234567890DEF12345678 /* AppDelegate.mm */; },
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
