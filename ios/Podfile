@@ -6,6 +6,10 @@ require Pod::Executable.execute_command('node', ['-p',
   )', __dir__]).strip
 
 platform :ios, min_ios_version_supported
+
+# ADD THIS LINE HERE (global modular headers for Firebase/Swift compatibility)
+use_modular_headers!
+
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -19,7 +23,6 @@ target 'GrowteqFlowers' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
@@ -27,15 +30,13 @@ target 'GrowteqFlowers' do
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false
     )
 
-    # FIX FOR gRPC / Firebase / Xcode 16+ simulator scan/compile failures
-    # Exclude arm64 for simulator (forces x86_64 sim build, avoids gRPC issues)
+    # Fix gRPC/Firebase/Xcode 16+ simulator issues
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'  # Bump if needed (your min_ios_version_supported probably >=13)
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
       end
     end

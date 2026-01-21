@@ -25,10 +25,7 @@ workflows:
           # Thorough clean
           rm -rf Pods Podfile.lock
           pod deintegrate || true
-          # Add modular headers only if missing (fixes Firebase/Swift warnings)
-          if ! grep -q "use_modular_headers!" Podfile; then
-            echo "use_modular_headers!" >> Podfile
-          fi
+          # No auto-append needed anymore – use_modular_headers! is in Podfile
           pod install --repo-update
           # Debug output
           echo "=== ios/ directory contents after pod install ==="
@@ -36,7 +33,7 @@ workflows:
           if ls *.xcworkspace >/dev/null 2>&1; then
             echo "Workspace found: $(ls *.xcworkspace)"
           else
-            echo "ERROR: No .xcworkspace generated after pod install!"
+            echo "ERROR: No .xcworkspace generated after pod install! Check Podfile syntax."
             exit 1
           fi
           cd ..
@@ -52,14 +49,12 @@ workflows:
       - name: Build iOS Simulator App
         script: |
           cd ios
-          # Clean previous build
           xcodebuild clean \
             -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
-            || echo "Clean failed - continuing anyway"
+            || echo "Clean failed - continuing"
 
-          # Build with generic destination (most stable for simulator in CI)
           xcodebuild build \
             -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
@@ -71,24 +66,22 @@ workflows:
             CODE_SIGNING_ALLOWED=NO \
             -derivedDataPath build
 
-          # Debug: Show build result and locate any .app bundles
           echo "=== Build finished. Searching for .app bundles ==="
-          find . -name "*.app" -type d 2>/dev/null || echo "No .app bundles found in build directory"
+          find . -name "*.app" -type d 2>/dev/null || echo "No .app found in build dir"
 
-          # Also check common DerivedData location
-          echo "=== Checking default DerivedData path ==="
-          find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d 2>/dev/null || echo "Nothing in DerivedData"
+          echo "=== Checking DerivedData fallback ==="
+          find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d 2>/dev/null || echo "No .app in DerivedData"
 
     artifacts:
       - ios/build/**/*
       - build/**/*
       - build/Build/Products/Release-iphonesimulator/*.app
-      - build/Build/Products/Release-iphonesimulator/**/*.app  # Catch nested ones
+      - build/Build/Products/Release-iphonesimulator/**/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app
       - ios/*.xcworkspace
-      - ios/Podfile.lock  # For debugging pod versions
+      - ios/Podfile.lock
 
     publishing:
       email:
         recipients:
-          - manuga262000@gail.com  # ← change to your real email (optional)
+          - manuga262000@gail.com  # Optional – change to yours
