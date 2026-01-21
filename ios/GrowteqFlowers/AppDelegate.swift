@@ -1,44 +1,38 @@
 import UIKit
-import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, RCTAppDependencyProviding {
+  
   var window: UIWindow?
-
-  var reactNativeDelegate: ReactNativeDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
-
+  
   func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    let delegate = ReactNativeDelegate()
+    
+    let delegate = RCTDefaultReactNativeFactoryDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
+    
+    // Provide dependency provider (optional but recommended for new arch)
     delegate.dependencyProvider = RCTAppDependencyProvider()
-
-    reactNativeDelegate = delegate
-    reactNativeFactory = factory
-
+    
     window = UIWindow(frame: UIScreen.main.bounds)
-
+    
     factory.startReactNative(
       withModuleName: "GrowteqFlowers",
-      in: window,
+      in: window!,
       launchOptions: launchOptions
     )
-
+    
+    window?.makeKeyAndVisible()
+    
     return true
   }
-}
-
-class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
-  override func sourceURL(for bridge: RCTBridge) -> URL? {
-    self.bundleURL()
-  }
-
-  override func bundleURL() -> URL? {
+  
+  // Optional: Provide custom bundle URL (debug vs release)
+  func sourceURL(for bridge: RCTBridge) -> URL? {
 #if DEBUG
     RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
 #else
