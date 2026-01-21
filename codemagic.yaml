@@ -22,15 +22,19 @@ workflows:
         script: |
           npm install
           cd ios
-          rm -rf Pods Podfile.lock
+          rm -rf Pods Podfile.lock build
           pod deintegrate || true
-          pod install --repo-update
+          # Aggressive cache clear for CocoaPods
+          rm -rf ~/.cocoapods/repos trunk ~/.cocoapods/cache
+          pod cache clean --all
+          pod repo update trunk || true
+          pod install --repo-update --clean-install
           echo "=== ios/ directory contents after pod install ==="
           ls -la
           if ls *.xcworkspace >/dev/null 2>&1; then
             echo "Workspace found: $(ls *.xcworkspace)"
           else
-            echo "ERROR: No .xcworkspace!"
+            echo "ERROR: No .xcworkspace! Pod install failed."
             exit 1
           fi
           cd ..
