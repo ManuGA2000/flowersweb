@@ -10,9 +10,6 @@ platform :ios, '16.0'
 # Use static frameworks for Firebase compatibility
 use_frameworks! :linkage => :static
 
-# Disable Flipper for production builds
-flipper_config = ENV['NO_FLIPPER'] == "1" ? FlipperConfiguration.disabled : FlipperConfiguration.enabled
-
 prepare_react_native_project!
 
 target 'GrowteqFlowers' do
@@ -45,13 +42,6 @@ target 'GrowteqFlowers' do
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
         config.build_settings['SWIFT_VERSION'] = '5.0'
         config.build_settings['DEFINES_MODULE'] = 'YES'
-        
-        # Fix for Xcode 15+ and React Native
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_NO_CONFIG=1'
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_MOBILE=1'
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_USE_LIBCPP=1'
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_CFG_NO_COROUTINES=1'
       end
     end
 
