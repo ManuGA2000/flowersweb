@@ -7,17 +7,18 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  // Initialize Firebase BEFORE React Native
+  self.moduleName = @"GrowteqFlowers";
+  self.initialProps = @{};
+
+  // Call super FIRST to initialize React Native
+  BOOL result = [super application:application didFinishLaunchingWithOptions:launchOptions];
+  
+  // Initialize Firebase AFTER React Native is set up
   if ([FIRApp defaultApp] == nil) {
     [FIRApp configure];
   }
 
-  self.moduleName = @"GrowteqFlowers";
-  // You can add your custom initial props in the dictionary below.
-  // They will be passed down to the ViewController used by React Native.
-  self.initialProps = @{};
-
-  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+  return result;
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
