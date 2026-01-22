@@ -7,18 +7,15 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  self.moduleName = @"GrowteqFlowers";
-  self.initialProps = @{};
-
-  // Call super FIRST to initialize React Native
-  BOOL result = [super application:application didFinishLaunchingWithOptions:launchOptions];
-  
-  // Initialize Firebase AFTER React Native is set up
+  // Initialize Firebase FIRST, before React Native
   if ([FIRApp defaultApp] == nil) {
     [FIRApp configure];
   }
 
-  return result;
+  self.moduleName = @"GrowteqFlowers";
+  self.initialProps = @{};
+
+  return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
