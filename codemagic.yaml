@@ -24,11 +24,8 @@ workflows:
           cd ios
           rm -rf Pods Podfile.lock build
           pod deintegrate || true
-          # Aggressive cache clear for CocoaPods
-          rm -rf ~/.cocoapods/repos trunk ~/.cocoapods/cache
           pod cache clean --all
-          pod repo update trunk || true
-          pod install --repo-update --clean-install
+          pod install --repo-update
           echo "=== ios/ directory contents after pod install ==="
           ls -la
           if ls *.xcworkspace >/dev/null 2>&1; then
@@ -45,16 +42,22 @@ workflows:
             --platform ios \
             --dev false \
             --entry-file index.js \
-            --bundle-output ios/main.jsbundle
+            --bundle-output ios/main.jsbundle \
+            --assets-dest ios
 
       - name: Build iOS Simulator App
         script: |
           cd ios
+          
+          # Clean previous builds
           xcodebuild clean \
             -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
-            -configuration Release
+            -configuration Release \
+            | xcpretty || true
 
+          # Build for iOS Simulator WITHOUT custom derivedDataPath
+          # This ensures CocoaPods modules are found correctly
           xcodebuild build \
             -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
@@ -64,32 +67,73 @@ workflows:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            SWIFT_VERSION=5.0 \
-            SWIFT_OBJC_BRIDGING_HEADER="GrowteqFlowers/GrowteqFlowers-Bridging-Header.h" \
-            OTHER_SWIFT_FLAGS="-D SWIFT_PACKAGE" \
-            -derivedDataPath build
+            ONLY_ACTIVE_ARCH=NO \
+            BUILD_DIR=$(pwd)/build/Build/Products \
+            OBJROOT=$(pwd)/build/Build/Intermediates.noindex \
+            SYMROOT=$(pwd)/build/Build/Products \
+            | xcpretty || xcodebuild build \
+              -workspace "$XCODE_WORKSPACE" \
+              -scheme "$XCODE_SCHEME" \
+              -sdk iphonesimulator \
+              -configuration Release \
+              -destination 'generic/platform=iOS Simulator' \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+              ONLY_ACTIVE_ARCH=NO \
+              BUILD_DIR=$(pwd)/build/Build/Products \
+              OBJROOT=$(pwd)/build/Build/Intermediates.noindex \
+              SYMROOT=$(pwd)/build/Build/Products
 
           echo "=== Searching for .app ==="
           find . -name "*.app" -type d 2>/dev/null
 
-          APP_PATH=$(find build/Build/Products/Release-iphonesimulator -name "*.app" -type d | head -1)
+          APP_PATH=$(find build -name "*.app" -type d 2>/dev/null | head -1)
+          if [ -z "$APP_PATH" ]; then
+            # Try default DerivedData location
+            APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "GrowteqFlowers.app" -path "*/Release-iphonesimulator/*" -type d 2>/dev/null | head -1)
+          fi
+          
           if [ -n "$APP_PATH" ]; then
             echo "Found app at $APP_PATH"
+            
+            # Verify the app bundle is complete
             if [ -f "$APP_PATH/Info.plist" ]; then
-              echo "Info.plist exists! Contents:"
+              echo "✅ Info.plist exists!"
               plutil -p "$APP_PATH/Info.plist"
             else
-              echo "No Info.plist in .app - build incomplete"
-              # Extra debug: list contents of .app folder
+              echo "❌ No Info.plist in .app"
               ls -la "$APP_PATH"
+              exit 1
             fi
+            
+            if [ -f "$APP_PATH/GrowteqFlowers" ]; then
+              echo "✅ Executable exists!"
+            else
+              echo "❌ No executable in .app"
+              ls -la "$APP_PATH"
+              exit 1
+            fi
+            
+            # Copy to expected location for artifacts
+            mkdir -p build/Build/Products/Release-iphonesimulator
+            if [ "$APP_PATH" != "build/Build/Products/Release-iphonesimulator/GrowteqFlowers.app" ]; then
+              cp -R "$APP_PATH" build/Build/Products/Release-iphonesimulator/
+            fi
+            
+            # Create a zip for Appetize.io
+            cd build/Build/Products/Release-iphonesimulator
+            zip -r ../../../../GrowteqFlowers-Simulator.zip GrowteqFlowers.app
+            cd ../../../../
+            echo "✅ Created GrowteqFlowers-Simulator.zip for Appetize.io"
+            
           else
-            echo "No .app found"
+            echo "❌ No .app found anywhere"
+            echo "Checking DerivedData..."
+            find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d 2>/dev/null | head -5
+            exit 1
           fi
 
     artifacts:
-      - ios/build/**/*
-      - build/**/*
-      - build/Build/Products/Release-iphonesimulator/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app
-      - ios/*.xcworkspace
+      - ios/GrowteqFlowers-Simulator.zip
+      - ios/build/Build/Products/Release-iphonesimulator/*.app
