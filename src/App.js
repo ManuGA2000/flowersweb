@@ -1,7 +1,7 @@
 // Main App Component
 
 import React, { useEffect, useState } from 'react';
-import { StatusBar, LogBox, View, ActivityIndicator, InteractionManager } from 'react-native';
+import { StatusBar, LogBox, View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -18,23 +18,24 @@ import { COLORS } from './utils/theme';
 // Ignore specific warnings
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
+  'InteractionManager has been deprecated',
 ]);
 
 const App = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Wait for interactions to complete before rendering full app
-    const task = InteractionManager.runAfterInteractions(() => {
+    // Give React Native time to fully initialize
+    const timer = setTimeout(() => {
       setIsReady(true);
-    });
-    return () => task.cancel();
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!isReady) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.primary }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.primary || '#4CAF50' }}>
           <ActivityIndicator size="large" color="#fff" />
         </View>
       </GestureHandlerRootView>
