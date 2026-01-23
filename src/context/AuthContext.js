@@ -1,7 +1,8 @@
 // Auth Context - Global authentication state
-// src\context\AuthContext.js
-import React, { createContext, useState, useEffect, useContext } from 'react';
+// src/context/AuthContext.js
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { onAuthStateChanged, getUserProfile } from '../services/authService';
+import { InteractionManager } from 'react-native';
 
 const AuthContext = createContext({});
 
@@ -9,24 +10,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const unsubscribeRef = useRef(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        // Fetch user profile from Firestore
-        const result = await getUserProfile(firebaseUser.uid);
-        if (result.success) {
-          setUserProfile(result.data);
+    // Wait for React Native to be fully ready before subscribing to Firebase
+    const task = InteractionManager.runAfterInteractions(() => {
+      unsubscribeRef.current = onAuthStateChanged(async (firebaseUser) => {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          // Fetch user profile from Firestore
+          const result = await getUserProfile(firebaseUser.uid);
+          if (result.success) {
+            setUserProfile(result.data);
+          }
+        } else {
+          setUser(null);
+          setUserProfile(null);
         }
-      } else {
-        setUser(null);
-        setUserProfile(null);
-      }
-      setLoading(false);
+        setLoading(false);
+      });
     });
 
-    return unsubscribe;
+    return () => {
+      task.cancel();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
   }, []);
 
   const refreshProfile = async () => {
