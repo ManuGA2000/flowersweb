@@ -22,18 +22,10 @@ workflows:
         script: |
           npm install
           cd ios
-          rm -rf Pods Podfile.lock build
+          rm -rf Pods Podfile.lock build ~/Library/Developer/Xcode/DerivedData
           pod deintegrate || true
           pod cache clean --all
           pod install --repo-update
-          echo "=== ios/ directory contents after pod install ==="
-          ls -la
-          if ls *.xcworkspace >/dev/null 2>&1; then
-            echo "Workspace found: $(ls *.xcworkspace)"
-          else
-            echo "ERROR: No .xcworkspace! Pod install failed."
-            exit 1
-          fi
           cd ..
 
       - name: Bundle React Native
