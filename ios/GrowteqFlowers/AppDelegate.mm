@@ -1,26 +1,32 @@
 #import "AppDelegate.h"
-
 #import <React/RCTBundleURLProvider.h>
+#import <React/RCTRootView.h>
 #import <Firebase.h>
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  // Initialize Firebase FIRST, before React Native
-  if ([FIRApp defaultApp] == nil) {
-    [FIRApp configure];
-  }
-
-  self.moduleName = @"GrowteqFlowers";
-  self.initialProps = @{};
-
-  return [super application:application didFinishLaunchingWithOptions:launchOptions];
-}
-
-- (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
-{
-  return [self bundleURL];
+  // Configure Firebase FIRST
+  [FIRApp configure];
+  
+  // Setup React Native
+  NSURL *jsCodeLocation = [self bundleURL];
+  
+  RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
+                                                      moduleName:@"GrowteqFlowers"
+                                               initialProperties:nil
+                                                   launchOptions:launchOptions];
+  
+  rootView.backgroundColor = [UIColor whiteColor];
+  
+  self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  UIViewController *rootViewController = [UIViewController new];
+  rootViewController.view = rootView;
+  self.window.rootViewController = rootViewController;
+  [self.window makeKeyAndVisible];
+  
+  return YES;
 }
 
 - (NSURL *)bundleURL
