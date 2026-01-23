@@ -1,16 +1,21 @@
 #import "AppDelegate.h"
 #import <React/RCTBundleURLProvider.h>
 
-@import Firebase;
+#if __has_include(<FirebaseCore/FirebaseCore.h>)
+#import <FirebaseCore/FirebaseCore.h>
+#elif __has_include(<Firebase/Firebase.h>)
+#import <Firebase/Firebase.h>
+#else
+#import <Firebase.h>
+#endif
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  // Configure Firebase synchronously before anything else
+  // Configure Firebase FIRST
   if ([FIRApp defaultApp] == nil) {
     [FIRApp configure];
-    NSLog(@"Firebase configured successfully");
   }
   
   self.moduleName = @"GrowteqFlowers";
