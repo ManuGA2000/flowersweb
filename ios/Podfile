@@ -10,9 +10,6 @@ use_frameworks! :linkage => :static
 
 prepare_react_native_project!
 
-# Disable New Architecture
-ENV['RCT_NEW_ARCH_ENABLED'] = '0'
-
 target 'GrowteqFlowers' do
   config = use_native_modules!
 
