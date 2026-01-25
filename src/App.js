@@ -1,65 +1,151 @@
 // Main App Component
+// src/App.js
 
-import React, { useEffect, useState } from 'react';
-import { StatusBar, LogBox, View, ActivityIndicator, Text } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  StatusBar, 
+  LogBox, 
+  View, 
+  ActivityIndicator, 
+  Text,
+  StyleSheet 
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Theme
-import { COLORS } from './utils/theme';
+// Theme - import only constants, not heavy modules
+const COLORS = {
+  primary: '#4CAF50',
+  white: '#FFFFFF',
+};
+
+// Try to import theme if it exists
+try {
+  const theme = require('./utils/theme');
+  if (theme.COLORS) {
+    Object.assign(COLORS, theme.COLORS);
+  }
+} catch (e) {
+  // Use default colors
+}
 
 // Ignore specific warnings
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
   'InteractionManager has been deprecated',
+  'ViewPropTypes will be removed',
+  'ColorPropType will be removed',
 ]);
 
-// Lazy load heavy components
-const AuthProvider = React.lazy(() => import('./context/AuthContext').then(m => ({ default: m.AuthProvider })));
-const CartProvider = React.lazy(() => import('./context/CartContext').then(m => ({ default: m.CartProvider })));
-const AppNavigator = React.lazy(() => import('./navigation/AppNavigator'));
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    marginTop: 16,
+    fontSize: 16,
+  },
+});
 
+// Loading screen component
 const LoadingScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.primary || '#4CAF50' }}>
-    <ActivityIndicator size="large" color="#fff" />
-    <Text style={{ color: '#fff', marginTop: 10 }}>Loading...</Text>
+  <View style={[styles.loadingContainer, { backgroundColor: COLORS.primary }]}>
+    <ActivityIndicator size="large" color={COLORS.white || '#FFFFFF'} />
+    <Text style={styles.loadingText}>Loading...</Text>
   </View>
 );
+
+// Main app content - loaded after delay
+const AppContent = React.memo(() => {
+  const [providersReady, setProvidersReady] = useState(false);
+  const [AuthProvider, setAuthProvider] = useState(null);
+  const [CartProvider, setCartProvider] = useState(null);
+  const [AppNavigator, setAppNavigator] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProviders = async () => {
+      try {
+        // Load providers sequentially with delays
+        const authModule = await import('./context/AuthContext');
+        if (!mounted) return;
+        setAuthProvider(() => authModule.AuthProvider);
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const cartModule = await import('./context/CartContext');
+        if (!mounted) return;
+        setCartProvider(() => cartModule.CartProvider);
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const navModule = await import('./navigation/AppNavigator');
+        if (!mounted) return;
+        setAppNavigator(() => navModule.default);
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (mounted) {
+          setProvidersReady(true);
+        }
+      } catch (error) {
+        console.log('Error loading providers:', error);
+        if (mounted) {
+          setProvidersReady(true);
+        }
+      }
+    };
+
+    loadProviders();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!providersReady || !AuthProvider || !CartProvider || !AppNavigator) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <SafeAreaProvider>
+      <StatusBar 
+        backgroundColor={COLORS.primary} 
+        barStyle="light-content" 
+      />
+      <AuthProvider>
+        <CartProvider>
+          <AppNavigator />
+        </CartProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
+});
 
 const App = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Longer delay to ensure RN is fully initialized
+    // Wait for React Native to be fully initialized
+    // This delay is critical for the New Architecture
     const timer = setTimeout(() => {
       setIsReady(true);
-    }, 1500);
+    }, 2000); // 2 second delay
+
     return () => clearTimeout(timer);
   }, []);
 
-  if (!isReady) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <LoadingScreen />
-      </GestureHandlerRootView>
-    );
-  }
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <StatusBar 
-          backgroundColor={COLORS.primary} 
-          barStyle="light-content" 
-        />
-        <React.Suspense fallback={<LoadingScreen />}>
-          <AuthProvider>
-            <CartProvider>
-              <AppNavigator />
-            </CartProvider>
-          </AuthProvider>
-        </React.Suspense>
-      </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.container}>
+      {isReady ? <AppContent /> : <LoadingScreen />}
     </GestureHandlerRootView>
   );
 };

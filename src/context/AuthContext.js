@@ -1,7 +1,16 @@
 // Auth Context - Global authentication state
-import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
+// src/context/AuthContext.js
 
-const AuthContext = createContext({});
+import React, { createContext, useState, useEffect, useContext, useRef, useCallback } from 'react';
+
+const AuthContext = createContext({
+  user: null,
+  userProfile: null,
+  loading: true,
+  refreshProfile: () => {},
+  isLoggedIn: false,
+  isInitialized: false,
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -9,72 +18,113 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const unsubscribeRef = useRef(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    // Delay Firebase initialization significantly
-    const timer = setTimeout(async () => {
+    mountedRef.current = true;
+    
+    // Significant delay before initializing Firebase Auth listener
+    // This ensures React Native's event system is fully ready
+    const initTimer = setTimeout(async () => {
+      if (!mountedRef.current) return;
+      
       try {
-        // Dynamic import to delay Firebase loading
-        const { onAuthStateChanged, getUserProfile } = await import('../services/authService');
+        console.log('Initializing Firebase Auth...');
         
-        unsubscribeRef.current = onAuthStateChanged(async (firebaseUser) => {
+        // Dynamic import to further delay Firebase loading
+        const authService = await import('../services/authService');
+        
+        if (!mountedRef.current) return;
+        
+        // Small delay after import
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (!mountedRef.current) return;
+        
+        unsubscribeRef.current = authService.onAuthStateChanged(async (firebaseUser) => {
+          if (!mountedRef.current) return;
+          
+          console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+          
           if (firebaseUser) {
             setUser(firebaseUser);
-            const result = await getUserProfile(firebaseUser.uid);
-            if (result.success) {
-              setUserProfile(result.data);
+            try {
+              const result = await authService.getUserProfile(firebaseUser.uid);
+              if (mountedRef.current && result.success) {
+                setUserProfile(result.data);
+              }
+            } catch (profileError) {
+              console.log('Error fetching profile:', profileError);
             }
           } else {
             setUser(null);
             setUserProfile(null);
           }
-          setLoading(false);
+          
+          if (mountedRef.current) {
+            setLoading(false);
+            setIsInitialized(true);
+          }
         });
         
-        setIsInitialized(true);
       } catch (error) {
         console.log('Auth initialization error:', error);
-        setLoading(false);
-        setIsInitialized(true);
+        if (mountedRef.current) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
       }
-    }, 2000); // 2 second delay
+    }, 3000); // 3 second delay before Firebase Auth
 
     return () => {
-      clearTimeout(timer);
+      mountedRef.current = false;
+      clearTimeout(initTimer);
       if (unsubscribeRef.current) {
-        unsubscribeRef.current();
+        try {
+          unsubscribeRef.current();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     };
   }, []);
 
-  const refreshProfile = async () => {
-    if (user) {
-      try {
-        const { getUserProfile } = await import('../services/authService');
-        const result = await getUserProfile(user.uid);
-        if (result.success) {
-          setUserProfile(result.data);
-        }
-      } catch (error) {
-        console.log('Refresh profile error:', error);
+  const refreshProfile = useCallback(async () => {
+    if (!user || !mountedRef.current) return;
+    
+    try {
+      const authService = await import('../services/authService');
+      const result = await authService.getUserProfile(user.uid);
+      if (mountedRef.current && result.success) {
+        setUserProfile(result.data);
       }
+    } catch (error) {
+      console.log('Refresh profile error:', error);
     }
+  }, [user]);
+
+  const value = {
+    user,
+    userProfile,
+    loading,
+    refreshProfile,
+    isLoggedIn: !!user,
+    isInitialized,
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userProfile, 
-      loading,
-      refreshProfile,
-      isLoggedIn: !!user,
-      isInitialized,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export default AuthContext;
