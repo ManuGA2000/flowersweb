@@ -13,9 +13,13 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  // ALWAYS configure Firebase - remove the nil check that was causing issues
-  [FIRApp configure];
-  NSLog(@"✅ Firebase configured in AppDelegate");
+  // Configure Firebase FIRST - before React Native initializes
+  @try {
+    [FIRApp configure];
+    NSLog(@"✅ Firebase configured successfully in AppDelegate");
+  } @catch (NSException *exception) {
+    NSLog(@"⚠️ Firebase configuration error: %@", exception.reason);
+  }
   
   self.moduleName = @"GrowteqFlowers";
   self.initialProps = @{};
