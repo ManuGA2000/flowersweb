@@ -1,6 +1,5 @@
 // Auth Context - Global authentication state
 import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
-import { onAuthStateChanged, getUserProfile } from '../services/authService';
 
 const AuthContext = createContext({});
 
@@ -8,12 +7,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const unsubscribeRef = useRef(null);
 
   useEffect(() => {
-    // Delay Firebase subscription to ensure RN is ready
-    const timer = setTimeout(() => {
+    // Delay Firebase initialization significantly
+    const timer = setTimeout(async () => {
       try {
+        // Dynamic import to delay Firebase loading
+        const { onAuthStateChanged, getUserProfile } = await import('../services/authService');
+        
         unsubscribeRef.current = onAuthStateChanged(async (firebaseUser) => {
           if (firebaseUser) {
             setUser(firebaseUser);
@@ -27,11 +30,14 @@ export const AuthProvider = ({ children }) => {
           }
           setLoading(false);
         });
+        
+        setIsInitialized(true);
       } catch (error) {
-        console.log('Auth error:', error);
+        console.log('Auth initialization error:', error);
         setLoading(false);
+        setIsInitialized(true);
       }
-    }, 1000);
+    }, 2000); // 2 second delay
 
     return () => {
       clearTimeout(timer);
@@ -43,9 +49,14 @@ export const AuthProvider = ({ children }) => {
 
   const refreshProfile = async () => {
     if (user) {
-      const result = await getUserProfile(user.uid);
-      if (result.success) {
-        setUserProfile(result.data);
+      try {
+        const { getUserProfile } = await import('../services/authService');
+        const result = await getUserProfile(user.uid);
+        if (result.success) {
+          setUserProfile(result.data);
+        }
+      } catch (error) {
+        console.log('Refresh profile error:', error);
       }
     }
   };
@@ -57,6 +68,7 @@ export const AuthProvider = ({ children }) => {
       loading,
       refreshProfile,
       isLoggedIn: !!user,
+      isInitialized,
     }}>
       {children}
     </AuthContext.Provider>
