@@ -1,5 +1,6 @@
 // Auth Context - Global authentication state
 // src/context/AuthContext.js
+// With delayed Firebase initialization to prevent RCTEventEmitter crash
 
 import React, { createContext, useState, useEffect, useContext, useRef, useCallback } from 'react';
 
@@ -19,38 +20,41 @@ export const AuthProvider = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const unsubscribeRef = useRef(null);
   const mountedRef = useRef(true);
+  const authServiceRef = useRef(null);
 
   useEffect(() => {
     mountedRef.current = true;
     
-    // Significant delay before initializing Firebase Auth listener
-    // This ensures React Native's event system is fully ready
+    // Firebase initialization with significant delay
     const initTimer = setTimeout(async () => {
       if (!mountedRef.current) return;
       
       try {
-        console.log('Initializing Firebase Auth...');
+        console.log('🔥 Initializing Firebase Auth...');
         
-        // Dynamic import to further delay Firebase loading
+        // Dynamic import to delay Firebase loading
         const authService = await import('../services/authService');
+        authServiceRef.current = authService;
         
         if (!mountedRef.current) return;
         
-        // Small delay after import
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Additional delay after import
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         if (!mountedRef.current) return;
+        
+        console.log('🔥 Setting up auth state listener...');
         
         unsubscribeRef.current = authService.onAuthStateChanged(async (firebaseUser) => {
           if (!mountedRef.current) return;
           
-          console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+          console.log('🔥 Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
           
           if (firebaseUser) {
             setUser(firebaseUser);
             try {
               const result = await authService.getUserProfile(firebaseUser.uid);
-              if (mountedRef.current && result.success) {
+              if (mountedRef.current && result && result.success) {
                 setUserProfile(result.data);
               }
             } catch (profileError) {
@@ -67,6 +71,8 @@ export const AuthProvider = ({ children }) => {
           }
         });
         
+        console.log('🔥 Auth listener set up successfully');
+        
       } catch (error) {
         console.log('Auth initialization error:', error);
         if (mountedRef.current) {
@@ -74,7 +80,7 @@ export const AuthProvider = ({ children }) => {
           setIsInitialized(true);
         }
       }
-    }, 3000); // 3 second delay before Firebase Auth
+    }, 2000); // 2 second delay before Firebase Auth
 
     return () => {
       mountedRef.current = false;
@@ -93,9 +99,9 @@ export const AuthProvider = ({ children }) => {
     if (!user || !mountedRef.current) return;
     
     try {
-      const authService = await import('../services/authService');
+      const authService = authServiceRef.current || await import('../services/authService');
       const result = await authService.getUserProfile(user.uid);
-      if (mountedRef.current && result.success) {
+      if (mountedRef.current && result && result.success) {
         setUserProfile(result.data);
       }
     } catch (error) {

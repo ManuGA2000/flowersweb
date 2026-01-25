@@ -4,6 +4,7 @@
     "crashlytics_auto_collection_enabled": false,
     "analytics_auto_collection_enabled": false,
     "messaging_auto_init_enabled": false,
-    "perf_auto_collection_enabled": false
+    "perf_auto_collection_enabled": false,
+    "database_persistence_enabled": false
   }
 }

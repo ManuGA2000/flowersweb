@@ -1,5 +1,6 @@
 // Main App Component
 // src/App.js
+// WORKAROUND for react-native-safe-area-context RCTEventEmitter crash on RN 0.83
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
@@ -8,12 +9,12 @@ import {
   View, 
   ActivityIndicator, 
   Text,
-  StyleSheet 
+  StyleSheet,
+  Platform,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Theme - import only constants, not heavy modules
+// Theme constants
 const COLORS = {
   primary: '#4CAF50',
   white: '#FFFFFF',
@@ -35,6 +36,7 @@ LogBox.ignoreLogs([
   'InteractionManager has been deprecated',
   'ViewPropTypes will be removed',
   'ColorPropType will be removed',
+  'RCTEventEmitter',
 ]);
 
 const styles = StyleSheet.create({
@@ -45,73 +47,86 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
   },
   loadingText: {
     color: '#FFFFFF',
     marginTop: 16,
     fontSize: 16,
+    fontWeight: '500',
   },
 });
 
-// Loading screen component
+// Loading screen component - NO SafeAreaProvider here
 const LoadingScreen = () => (
   <View style={[styles.loadingContainer, { backgroundColor: COLORS.primary }]}>
     <ActivityIndicator size="large" color={COLORS.white || '#FFFFFF'} />
-    <Text style={styles.loadingText}>Loading...</Text>
+    <Text style={styles.loadingText}>Loading GrowteqFlowers...</Text>
   </View>
 );
 
-// Main app content - loaded after delay
-const AppContent = React.memo(() => {
-  const [providersReady, setProvidersReady] = useState(false);
+// Main app content - SafeAreaProvider is loaded here AFTER delay
+const MainApp = React.memo(() => {
+  const [SafeAreaProvider, setSafeAreaProvider] = useState(null);
   const [AuthProvider, setAuthProvider] = useState(null);
   const [CartProvider, setCartProvider] = useState(null);
   const [AppNavigator, setAppNavigator] = useState(null);
+  const [allLoaded, setAllLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const loadProviders = async () => {
+    const loadModules = async () => {
       try {
-        // Load providers sequentially with delays
+        // Step 1: Load SafeAreaProvider with delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (!mounted) return;
+        
+        const safeAreaModule = await import('react-native-safe-area-context');
+        if (!mounted) return;
+        setSafeAreaProvider(() => safeAreaModule.SafeAreaProvider);
+        
+        // Step 2: Load AuthProvider
+        await new Promise(resolve => setTimeout(resolve, 300));
+        if (!mounted) return;
+        
         const authModule = await import('./context/AuthContext');
         if (!mounted) return;
         setAuthProvider(() => authModule.AuthProvider);
         
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Step 3: Load CartProvider
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (!mounted) return;
         
         const cartModule = await import('./context/CartContext');
         if (!mounted) return;
         setCartProvider(() => cartModule.CartProvider);
         
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Step 4: Load Navigator
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (!mounted) return;
         
         const navModule = await import('./navigation/AppNavigator');
         if (!mounted) return;
         setAppNavigator(() => navModule.default);
         
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        // All loaded
         if (mounted) {
-          setProvidersReady(true);
+          setAllLoaded(true);
         }
       } catch (error) {
-        console.log('Error loading providers:', error);
-        if (mounted) {
-          setProvidersReady(true);
-        }
+        console.log('Error loading modules:', error);
       }
     };
 
-    loadProviders();
+    loadModules();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  if (!providersReady || !AuthProvider || !CartProvider || !AppNavigator) {
+  // Show loading while modules load
+  if (!allLoaded || !SafeAreaProvider || !AuthProvider || !CartProvider || !AppNavigator) {
     return <LoadingScreen />;
   }
 
@@ -134,18 +149,18 @@ const App = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Wait for React Native to be fully initialized
-    // This delay is critical for the New Architecture
+    // Critical: Wait for RN event system to fully initialize
+    // This delay prevents the RCTEventEmitter crash
     const timer = setTimeout(() => {
       setIsReady(true);
-    }, 2000); // 2 second delay
+    }, 3000); // 3 second delay for safety
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      {isReady ? <AppContent /> : <LoadingScreen />}
+      {isReady ? <MainApp /> : <LoadingScreen />}
     </GestureHandlerRootView>
   );
 };
