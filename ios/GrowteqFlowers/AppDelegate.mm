@@ -13,10 +13,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  // Configure Firebase FIRST
-  if ([FIRApp defaultApp] == nil) {
-    [FIRApp configure];
-  }
+  // ALWAYS configure Firebase - remove the nil check that was causing issues
+  [FIRApp configure];
+  NSLog(@"✅ Firebase configured in AppDelegate");
   
   self.moduleName = @"GrowteqFlowers";
   self.initialProps = @{};
