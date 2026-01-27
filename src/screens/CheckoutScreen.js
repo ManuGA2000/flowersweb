@@ -1,6 +1,6 @@
-// Enhanced Checkout Screen
+// Enhanced Checkout Screen - No Pricing, Saved Address Support
 // src/screens/CheckoutScreen.js
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SIZES, SHADOWS } from '../utils/theme';
 import { Header, Input, Button, DatePicker } from '../components';
 import { useCart } from '../context/CartContext';
@@ -17,8 +19,10 @@ import { useAuth } from '../context/AuthContext';
 import { createOrder } from '../services/orderService';
 import { sendOrderViaWhatsApp } from '../services/whatsappService';
 
+const SAVED_ADDRESS_KEY = '@growteq_saved_address';
+
 const CheckoutScreen = ({ navigation }) => {
-  const { cartItems, getCartTotal, clearCart } = useCart();
+  const { cartItems, clearCart } = useCart();
   const { user, userProfile } = useAuth();
   const [deliveryType, setDeliveryType] = useState('delivery');
   const [address, setAddress] = useState({
@@ -28,37 +32,89 @@ const CheckoutScreen = ({ navigation }) => {
     state: 'Tamil Nadu',
     pincode: '',
   });
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [showSavedAddresses, setShowSavedAddresses] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
 
-  // Calculate totals
+  // Load saved addresses on mount
+  useEffect(() => {
+    loadSavedAddresses();
+  }, []);
+
+  const loadSavedAddresses = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(SAVED_ADDRESS_KEY);
+      if (stored) {
+        const addresses = JSON.parse(stored);
+        setSavedAddresses(addresses);
+        // If user has saved addresses, show the selection modal
+        if (addresses.length > 0) {
+          setShowSavedAddresses(true);
+        }
+      }
+    } catch (error) {
+      console.log('Error loading saved addresses:', error);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  const saveAddress = async (newAddress) => {
+    try {
+      // Check if address already exists
+      const exists = savedAddresses.some(
+        addr => 
+          addr.street === newAddress.street && 
+          addr.city === newAddress.city && 
+          addr.pincode === newAddress.pincode
+      );
+
+      if (!exists) {
+        const updatedAddresses = [...savedAddresses, { ...newAddress, id: Date.now().toString() }];
+        await AsyncStorage.setItem(SAVED_ADDRESS_KEY, JSON.stringify(updatedAddresses));
+        setSavedAddresses(updatedAddresses);
+      }
+    } catch (error) {
+      console.log('Error saving address:', error);
+    }
+  };
+
+  const selectSavedAddress = (savedAddress) => {
+    setAddress({
+      street: savedAddress.street,
+      landmark: savedAddress.landmark || '',
+      city: savedAddress.city,
+      state: savedAddress.state || 'Tamil Nadu',
+      pincode: savedAddress.pincode,
+    });
+    setShowSavedAddresses(false);
+  };
+
+  const deleteSavedAddress = async (addressId) => {
+    try {
+      const updatedAddresses = savedAddresses.filter(addr => addr.id !== addressId);
+      await AsyncStorage.setItem(SAVED_ADDRESS_KEY, JSON.stringify(updatedAddresses));
+      setSavedAddresses(updatedAddresses);
+    } catch (error) {
+      console.log('Error deleting address:', error);
+    }
+  };
+
+  // Calculate totals (for display without pricing)
   const orderSummary = useMemo(() => {
-    let subtotal = 0;
-    let totalDiscount = 0;
     let totalStems = 0;
 
     cartItems.forEach(item => {
-      if (item.totalPrice) {
-        subtotal += item.pricePerStem * item.quantity;
-        totalDiscount += Math.round((item.pricePerStem * item.quantity) * item.discount);
-        totalStems += item.quantity;
-      } else {
-        subtotal += item.price * item.quantity;
-      }
+      totalStems += item.quantity;
     });
 
-    const deliveryFee = deliveryType === 'delivery' ? (subtotal > 5000 ? 0 : 200) : 0;
-    const total = subtotal - totalDiscount + deliveryFee;
-
     return {
-      subtotal,
-      totalDiscount,
-      deliveryFee,
-      total,
       totalStems,
-      freeDeliveryThreshold: 5000,
+      itemCount: cartItems.length,
     };
-  }, [cartItems, deliveryType]);
+  }, [cartItems]);
 
   const validateForm = () => {
     if (deliveryType === 'delivery') {
@@ -87,6 +143,11 @@ const CheckoutScreen = ({ navigation }) => {
     
     setLoading(true);
     try {
+      // Save the address for future use
+      if (deliveryType === 'delivery') {
+        await saveAddress(address);
+      }
+
       const orderData = {
         userId: user.uid,
         userEmail: user.email,
@@ -99,16 +160,10 @@ const CheckoutScreen = ({ navigation }) => {
           selectedColor: item.selectedColor,
           selectedSize: item.selectedSize,
           quantity: item.quantity,
-          pricePerStem: item.pricePerStem || item.price,
-          totalPrice: item.totalPrice || (item.price * item.quantity),
-          discount: item.discount || 0,
           requiredDate: item.requiredDate,
           image: item.selectedColor?.image || item.image,
         })),
-        subtotal: orderSummary.subtotal,
-        totalDiscount: orderSummary.totalDiscount,
-        deliveryFee: orderSummary.deliveryFee,
-        totalAmount: orderSummary.total,
+        totalStems: orderSummary.totalStems,
         deliveryType,
         address: deliveryType === 'delivery' ? address : null,
         notes: notes.trim(),
@@ -154,6 +209,81 @@ const CheckoutScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Saved Addresses Modal */}
+      <Modal
+        visible={showSavedAddresses && savedAddresses.length > 0}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSavedAddresses(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Saved Addresses</Text>
+              <TouchableOpacity 
+                onPress={() => setShowSavedAddresses(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Icon name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.modalSubtitle}>
+              Select a saved address or enter a new one
+            </Text>
+
+            <ScrollView style={styles.addressList}>
+              {savedAddresses.map((savedAddr) => (
+                <TouchableOpacity
+                  key={savedAddr.id}
+                  style={styles.savedAddressCard}
+                  onPress={() => selectSavedAddress(savedAddr)}
+                >
+                  <View style={styles.savedAddressInfo}>
+                    <Icon name="map-marker" size={20} color={COLORS.primary} />
+                    <View style={styles.savedAddressText}>
+                      <Text style={styles.savedAddressStreet} numberOfLines={2}>
+                        {savedAddr.street}
+                      </Text>
+                      {savedAddr.landmark && (
+                        <Text style={styles.savedAddressLandmark}>
+                          Near: {savedAddr.landmark}
+                        </Text>
+                      )}
+                      <Text style={styles.savedAddressCity}>
+                        {savedAddr.city}, {savedAddr.state} - {savedAddr.pincode}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.savedAddressActions}>
+                    <TouchableOpacity
+                      style={styles.useAddressBtn}
+                      onPress={() => selectSavedAddress(savedAddr)}
+                    >
+                      <Text style={styles.useAddressBtnText}>Use</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteAddressBtn}
+                      onPress={() => deleteSavedAddress(savedAddr.id)}
+                    >
+                      <Icon name="delete-outline" size={18} color={COLORS.error} />
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Button
+              title="Enter New Address"
+              onPress={() => setShowSavedAddresses(false)}
+              variant="outline"
+              icon="plus"
+              style={styles.newAddressBtn}
+            />
+          </View>
+        </View>
+      </Modal>
+
       <Header
         title="Checkout"
         showBack
@@ -198,9 +328,7 @@ const CheckoutScreen = ({ navigation }) => {
                   Home Delivery
                 </Text>
                 <Text style={styles.deliverySubtext}>
-                  {orderSummary.subtotal >= orderSummary.freeDeliveryThreshold
-                    ? 'Free delivery'
-                    : `₹200 delivery fee`}
+                  We'll deliver to your address
                 </Text>
               </View>
               {deliveryType === 'delivery' && (
@@ -247,7 +375,27 @@ const CheckoutScreen = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Icon name="map-marker-outline" size={22} color={COLORS.primary} />
               <Text style={styles.sectionTitle}>Delivery Address</Text>
+              {savedAddresses.length > 0 && (
+                <TouchableOpacity 
+                  onPress={() => setShowSavedAddresses(true)}
+                  style={styles.savedAddressesBtn}
+                >
+                  <Icon name="history" size={18} color={COLORS.primary} />
+                  <Text style={styles.savedAddressesBtnText}>Saved</Text>
+                </TouchableOpacity>
+              )}
             </View>
+
+            {/* Show selected saved address indicator */}
+            {address.street && savedAddresses.some(
+              addr => addr.street === address.street && addr.pincode === address.pincode
+            ) && (
+              <View style={styles.usingSavedAddressNote}>
+                <Icon name="check-circle" size={16} color={COLORS.success} />
+                <Text style={styles.usingSavedAddressText}>Using saved address</Text>
+              </View>
+            )}
+
             <Input
               label="Street Address"
               value={address.street}
@@ -340,11 +488,9 @@ const CheckoutScreen = ({ navigation }) => {
                     </View>
                   )}
                 </View>
-                <View style={styles.orderItemPrice}>
-                  <Text style={styles.itemQty}>{item.quantity} {item.selectedSize ? 'stems' : 'pcs'}</Text>
-                  <Text style={styles.itemPrice}>
-                    ₹{(item.totalPrice || (item.price * item.quantity)).toLocaleString('en-IN')}
-                  </Text>
+                <View style={styles.orderItemQuantity}>
+                  <Text style={styles.itemQty}>{item.quantity}</Text>
+                  <Text style={styles.itemQtyLabel}>stems</Text>
                 </View>
               </View>
             </View>
@@ -352,62 +498,22 @@ const CheckoutScreen = ({ navigation }) => {
 
           <View style={styles.divider} />
 
-          {/* Price Breakdown */}
-          <View style={styles.priceBreakdown}>
-            <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Subtotal</Text>
-              <Text style={styles.priceValue}>₹{orderSummary.subtotal.toLocaleString('en-IN')}</Text>
-            </View>
-
-            {orderSummary.totalDiscount > 0 && (
-              <View style={[styles.priceRow, styles.discountRow]}>
-                <View style={styles.discountLabel}>
-                  <Icon name="tag-outline" size={16} color={COLORS.success} />
-                  <Text style={styles.discountText}>Volume Discount</Text>
-                </View>
-                <Text style={styles.discountValue}>
-                  - ₹{orderSummary.totalDiscount.toLocaleString('en-IN')}
-                </Text>
-              </View>
-            )}
-
-            {deliveryType === 'delivery' && (
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>Delivery Fee</Text>
-                <Text style={[
-                  styles.priceValue,
-                  orderSummary.deliveryFee === 0 && styles.freeText,
-                ]}>
-                  {orderSummary.deliveryFee === 0 ? 'FREE' : `₹${orderSummary.deliveryFee}`}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.totalDivider} />
-
-          {/* Total */}
+          {/* Total Summary */}
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{orderSummary.total.toLocaleString('en-IN')}</Text>
+            <Text style={styles.totalLabel}>Total Items</Text>
+            <Text style={styles.totalValue}>{orderSummary.itemCount}</Text>
           </View>
-
-          {/* Savings Banner */}
-          {orderSummary.totalDiscount > 0 && (
-            <View style={styles.savingsBanner}>
-              <Icon name="piggy-bank-outline" size={20} color={COLORS.success} />
-              <Text style={styles.savingsText}>
-                You're saving ₹{orderSummary.totalDiscount.toLocaleString('en-IN')} on this order!
-              </Text>
-            </View>
-          )}
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total Stems</Text>
+            <Text style={styles.totalValueHighlight}>{orderSummary.totalStems.toLocaleString('en-IN')}</Text>
+          </View>
         </View>
 
         {/* WhatsApp Info */}
         <View style={styles.whatsappInfo}>
           <Icon name="whatsapp" size={24} color={COLORS.whatsapp} />
           <Text style={styles.whatsappText}>
-            Your order will be sent via WhatsApp. Our team will review and confirm your order with final pricing.
+            Your order request will be sent via WhatsApp. Our team will review and confirm your order with pricing details.
           </Text>
         </View>
       </ScrollView>
@@ -415,11 +521,11 @@ const CheckoutScreen = ({ navigation }) => {
       {/* Bottom Action Bar */}
       <View style={styles.bottomBar}>
         <View style={styles.bottomTotal}>
-          <Text style={styles.bottomTotalLabel}>Total</Text>
-          <Text style={styles.bottomTotalValue}>₹{orderSummary.total.toLocaleString('en-IN')}</Text>
+          <Text style={styles.bottomTotalLabel}>Total Stems</Text>
+          <Text style={styles.bottomTotalValue}>{orderSummary.totalStems.toLocaleString('en-IN')}</Text>
         </View>
         <Button
-          title="Send Order via WhatsApp"
+          title="Send Request via WhatsApp"
           onPress={handleSendOrder}
           loading={loading}
           variant="whatsapp"
@@ -460,6 +566,35 @@ const styles = StyleSheet.create({
     fontSize: SIZES.lg,
     fontWeight: '700',
     color: COLORS.text,
+    flex: 1,
+  },
+  savedAddressesBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  savedAddressesBtnText: {
+    fontSize: SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  usingSavedAddressNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.successLight,
+    padding: 10,
+    borderRadius: SIZES.radius,
+    marginBottom: 12,
+    gap: 6,
+  },
+  usingSavedAddressText: {
+    fontSize: SIZES.sm,
+    color: COLORS.success,
+    fontWeight: '500',
   },
   deliveryOptions: {
     gap: 12,
@@ -568,100 +703,47 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '500',
   },
-  orderItemPrice: {
-    alignItems: 'flex-end',
+  orderItemQuantity: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primaryMuted,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: SIZES.radius,
   },
   itemQty: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-    marginBottom: 2,
+    fontSize: SIZES.xl,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
-  itemPrice: {
-    fontSize: SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
+  itemQtyLabel: {
+    fontSize: SIZES.xs,
+    color: COLORS.primary,
   },
   divider: {
     height: 1,
     backgroundColor: COLORS.border,
     marginVertical: 12,
   },
-  priceBreakdown: {
-    gap: 10,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  priceLabel: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
-  },
-  priceValue: {
-    fontSize: SIZES.md,
-    color: COLORS.text,
-    fontWeight: '500',
-  },
-  freeText: {
-    color: COLORS.success,
-    fontWeight: '600',
-  },
-  discountRow: {
-    backgroundColor: COLORS.successLight,
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  discountLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  discountText: {
-    fontSize: SIZES.sm,
-    color: COLORS.success,
-    fontWeight: '500',
-  },
-  discountValue: {
-    fontSize: SIZES.md,
-    color: COLORS.success,
-    fontWeight: '600',
-  },
-  totalDivider: {
-    height: 2,
-    backgroundColor: COLORS.primary,
-    marginVertical: 12,
-  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 8,
   },
   totalLabel: {
-    fontSize: SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontSize: SIZES.md,
+    color: COLORS.textSecondary,
   },
   totalValue: {
-    fontSize: SIZES.xxxl,
+    fontSize: SIZES.lg,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  totalValueHighlight: {
+    fontSize: SIZES.xxl,
     fontWeight: '800',
     color: COLORS.primary,
-  },
-  savingsBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.successLight,
-    padding: 12,
-    borderRadius: SIZES.radius,
-    marginTop: 12,
-    gap: 8,
-  },
-  savingsText: {
-    fontSize: SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.success,
   },
   whatsappInfo: {
     flexDirection: 'row',
@@ -705,6 +787,96 @@ const styles = StyleSheet.create({
   },
   checkoutBtn: {
     flex: 1,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: SIZES.radiusXL,
+    borderTopRightRadius: SIZES.radiusXL,
+    padding: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: SIZES.xl,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalSubtitle: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+  },
+  addressList: {
+    maxHeight: 300,
+  },
+  savedAddressCard: {
+    backgroundColor: COLORS.backgroundDark,
+    borderRadius: SIZES.radius,
+    padding: 14,
+    marginBottom: 12,
+  },
+  savedAddressInfo: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  savedAddressText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  savedAddressStreet: {
+    fontSize: SIZES.md,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  savedAddressLandmark: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: 2,
+  },
+  savedAddressCity: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+  },
+  savedAddressActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  useAddressBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: SIZES.radius,
+  },
+  useAddressBtnText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    fontSize: SIZES.sm,
+  },
+  deleteAddressBtn: {
+    padding: 8,
+  },
+  newAddressBtn: {
+    marginTop: 8,
   },
 });
 

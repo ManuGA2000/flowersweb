@@ -1,3 +1,4 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
     "react-native/scripts/react_native_pods.rb",
@@ -6,6 +7,7 @@ require Pod::Executable.execute_command('node', ['-p',
 
 platform :ios, '16.0'
 
+# Use static frameworks for Firebase compatibility
 use_frameworks! :linkage => :static
 
 prepare_react_native_project!
@@ -18,6 +20,7 @@ target 'GrowteqFlowers' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # Firebase pods with modular headers
   pod 'Firebase', :modular_headers => true
   pod 'FirebaseCore', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
@@ -39,6 +42,14 @@ target 'GrowteqFlowers' do
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
         config.build_settings['SWIFT_VERSION'] = '5.0'
         config.build_settings['DEFINES_MODULE'] = 'YES'
+      end
+    end
+
+    installer.generated_projects.each do |project|
+      project.targets.each do |target|
+        target.build_configurations.each do |config|
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+        end
       end
     end
   end

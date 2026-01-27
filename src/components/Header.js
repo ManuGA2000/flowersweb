@@ -1,5 +1,6 @@
-// Enhanced Header Component - Optimized for better appearance
+// Enhanced Header Component with SVG Logo (with fallback)
 // src/components/Header.js
+
 import React from 'react';
 import {
   View,
@@ -13,6 +14,15 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SIZES } from '../utils/theme';
 import { useCart } from '../context/CartContext';
+
+// Try to import SVG logo - will use fallback if not configured
+let GrowteqLogo = null;
+try {
+  // This requires react-native-svg and react-native-svg-transformer to be configured
+  GrowteqLogo = require('../assets/Growteq_Fevicon.svg').default;
+} catch (e) {
+  console.log('SVG import not available, using fallback icon');
+}
 
 const Header = ({ 
   title, 
@@ -30,14 +40,25 @@ const Header = ({
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
 
-  const textColor = light || transparent ? COLORS.text :  COLORS.textWhite;
+  const textColor = light || transparent ? COLORS.text : COLORS.textWhite;
   const iconColor = light || transparent ? COLORS.text : COLORS.textWhite;
+
+  // Render logo - SVG if available, otherwise fallback to icon
+  const renderLogo = () => {
+    // Check if GrowteqLogo is a valid React component
+    if (GrowteqLogo && typeof GrowteqLogo === 'function') {
+      return <GrowteqLogo width={32} height={32} />;
+    }
+    
+    // Fallback to MaterialCommunityIcons
+    return <Icon name="flower-tulip" size={28} color={COLORS.primary} />;
+  };
 
   const HeaderContent = () => (
     <View style={styles.content}>
       {/* Left - Back button or Logo */}
       <View style={styles.left}>
-        {showBack ?  (
+        {showBack ? (
           <TouchableOpacity 
             style={[
               styles.iconBtn,
@@ -45,30 +66,49 @@ const Header = ({
             ]}
             onPress={onBackPress || (() => navigation?.goBack())}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            activeOpacity={0.7}
           >
-            <Icon name="arrow-left" size={24} color={iconColor} />
+            <Icon name="arrow-left" size={22} color={iconColor} />
           </TouchableOpacity>
         ) : (
-          <View style={styles.logoContainer}>
-            <View style={styles.logoIcon}>
-              <Icon name="flower-tulip" size={22} color={COLORS.primary} />
+          <TouchableOpacity 
+            style={styles.logoContainer}
+            onPress={() => navigation?.navigate('Home')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.logoImageWrapper}>
+              {renderLogo()}
             </View>
-            <View style={styles.logoText}>
-              <Text style={[styles. logoTitle, { color: textColor }]}>Growteq</Text>
+            <View style={styles.logoTextContainer}>
+              <Text style={[styles.logoTitle, { color: textColor }]}>Growteq</Text>
               <Text style={[styles.logoSubtitle, { color: textColor }]}>FLOWERS</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
       </View>
 
-      {/* Center - Title */}
-      {(title || showBack) && (
-        <View style={styles.center}>
-          <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
+      {/* Center - Title (always show if provided) */}
+      {title && (
+        <View style={[styles.center, showBack && styles.centerWithBack]}>
+          <Text 
+            style={[
+              styles.title, 
+              { color: textColor },
+              !showBack && styles.titleWithLogo,
+            ]} 
+            numberOfLines={1}
+          >
             {title}
           </Text>
           {subtitle && (
-            <Text style={[styles.subtitle, { color: textColor }]} numberOfLines={1}>
+            <Text 
+              style={[
+                styles.subtitle, 
+                { color: textColor },
+                !showBack && styles.subtitleWithLogo,
+              ]} 
+              numberOfLines={1}
+            >
               {subtitle}
             </Text>
           )}
@@ -77,8 +117,22 @@ const Header = ({
 
       {/* Right - Actions */}
       <View style={styles.right}>
-        {rightComponent ?  rightComponent : (
+        {rightComponent ? rightComponent : (
           <View style={styles.rightActions}>
+            {showSearch && (
+              <TouchableOpacity 
+                style={[
+                  styles.iconBtn,
+                  (light || transparent) && styles.iconBtnLight,
+                  { marginRight: 8 },
+                ]}
+                onPress={onSearchPress}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                activeOpacity={0.7}
+              >
+                <Icon name="magnify" size={22} color={iconColor} />
+              </TouchableOpacity>
+            )}
             {showCart && (
               <TouchableOpacity 
                 style={[
@@ -90,13 +144,14 @@ const Header = ({
                     navigation.navigate('Cart');
                   }
                 }}
-                hitSlop={{ top: 10, bottom:  10, left: 10, right: 10 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                activeOpacity={0.7}
               >
-                <Icon name="cart-outline" size={24} color={iconColor} />
+                <Icon name="cart-outline" size={22} color={iconColor} />
                 {cartCount > 0 && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>
-                      {cartCount > 9 ? '9+' : cartCount}
+                      {cartCount > 99 ? '99+' : cartCount}
                     </Text>
                   </View>
                 )}
@@ -111,7 +166,11 @@ const Header = ({
   if (transparent) {
     return (
       <View style={[styles.container, styles.containerTransparent]}>
-        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        <StatusBar 
+          translucent 
+          backgroundColor="transparent" 
+          barStyle={light ? "dark-content" : "light-content"} 
+        />
         <HeaderContent />
       </View>
     );
@@ -119,8 +178,8 @@ const Header = ({
 
   return (
     <LinearGradient
-      colors={COLORS.gradientPrimary}
-      start={{ x: 0, y:  0 }}
+      colors={COLORS.gradientPrimary || [COLORS.primary, COLORS.primaryDark || '#388E3C']}
+      start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}
       style={styles.container}
     >
@@ -133,114 +192,134 @@ const Header = ({
 const styles = StyleSheet.create({
   container: {
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  containerTransparent:  {
+  containerTransparent: {
     backgroundColor: 'transparent',
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
+    shadowColor: 'transparent',
+    elevation: 0,
   },
-  content:  {
+  content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 56,
-    paddingHorizontal: 12,
+    height: 60,
+    paddingHorizontal: 16,
   },
   left: {
-    minWidth: 48,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 8,
+    alignItems: 'flex-start',
+    paddingHorizontal: 12,
   },
-  right:  {
-    minWidth: 48,
+  centerWithBack: {
+    alignItems: 'center',
+  },
+  right: {
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
   rightActions: {
-    flexDirection:  'row',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
   },
   logoContainer: {
-    flexDirection:  'row',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
-  logoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: COLORS.white,
+  logoImageWrapper: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: COLORS.white || '#FFFFFF',
     justifyContent: 'center',
-    alignItems:  'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
   },
-  logoText: {
+  logoTextContainer: {
+    marginLeft: 10,
     justifyContent: 'center',
   },
   logoTitle: {
-    fontSize:  SIZES.md,
+    fontSize: SIZES?.lg || 18,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    lineHeight: 22,
   },
   logoSubtitle: {
-    fontSize: 7,
-    fontWeight: '600',
-    letterSpacing: 2,
-    opacity: 0.8,
-    marginTop: -2,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 3,
+    opacity: 0.85,
+    marginTop: -1,
   },
   title: {
-    fontSize: SIZES.md,
+    fontSize: SIZES?.md || 16,
     fontWeight: '700',
-    textAlign: 'center',
+    letterSpacing: 0.2,
+  },
+  titleWithLogo: {
+    fontSize: SIZES?.sm || 14,
+    fontWeight: '600',
   },
   subtitle: {
-    fontSize: SIZES.xs,
-    opacity: 0.8,
+    fontSize: SIZES?.xs || 12,
+    opacity: 0.85,
     marginTop: 2,
-    textAlign: 'center',
+  },
+  subtitleWithLogo: {
+    fontSize: 11,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
-  iconBtnLight:  {
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.shadow,
+  iconBtnLight: {
+    backgroundColor: COLORS.white || '#FFFFFF',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity:  1,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   badge: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: COLORS.accent,
+    top: 0,
+    right: 0,
+    backgroundColor: COLORS.accent || '#FF5722',
     borderRadius: 10,
-    minWidth: 18,
-    height: 18,
+    minWidth: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 5,
     borderWidth: 2,
-    borderColor: COLORS.white,
+    borderColor: COLORS.white || '#FFFFFF',
   },
   badgeText: {
-    color: COLORS.textWhite,
-    fontSize: 10,
+    color: COLORS.textWhite || '#FFFFFF',
+    fontSize: 11,
     fontWeight: '700',
   },
 });

@@ -1,8 +1,6 @@
 // Main App Component
 // src/App.js
-// WORKAROUND for react-native-safe-area-context RCTEventEmitter crash on RN 0.83
-
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   StatusBar, 
   LogBox, 
@@ -10,27 +8,21 @@ import {
   ActivityIndicator, 
   Text,
   StyleSheet,
-  Platform,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-// Theme constants
 const COLORS = {
   primary: '#4CAF50',
   white: '#FFFFFF',
 };
 
-// Try to import theme if it exists
 try {
   const theme = require('./utils/theme');
   if (theme.COLORS) {
     Object.assign(COLORS, theme.COLORS);
   }
-} catch (e) {
-  // Use default colors
-}
+} catch (e) {}
 
-// Ignore specific warnings
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
   'InteractionManager has been deprecated',
@@ -40,23 +32,11 @@ LogBox.ignoreLogs([
 ]);
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#FFFFFF',
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: '#FFFFFF', marginTop: 16, fontSize: 16, fontWeight: '500' },
 });
 
-// Loading screen component - NO SafeAreaProvider here
 const LoadingScreen = () => (
   <View style={[styles.loadingContainer, { backgroundColor: COLORS.primary }]}>
     <ActivityIndicator size="large" color={COLORS.white || '#FFFFFF'} />
@@ -64,11 +44,11 @@ const LoadingScreen = () => (
   </View>
 );
 
-// Main app content - SafeAreaProvider is loaded here AFTER delay
 const MainApp = React.memo(() => {
   const [SafeAreaProvider, setSafeAreaProvider] = useState(null);
   const [AuthProvider, setAuthProvider] = useState(null);
   const [CartProvider, setCartProvider] = useState(null);
+  const [FlowerDataProvider, setFlowerDataProvider] = useState(null); // ADD THIS
   const [AppNavigator, setAppNavigator] = useState(null);
   const [allLoaded, setAllLoaded] = useState(false);
 
@@ -77,7 +57,7 @@ const MainApp = React.memo(() => {
 
     const loadModules = async () => {
       try {
-        // Step 1: Load SafeAreaProvider with delay
+        // Step 1: Load SafeAreaProvider
         await new Promise(resolve => setTimeout(resolve, 500));
         if (!mounted) return;
         
@@ -93,7 +73,15 @@ const MainApp = React.memo(() => {
         if (!mounted) return;
         setAuthProvider(() => authModule.AuthProvider);
         
-        // Step 3: Load CartProvider
+        // Step 3: Load FlowerDataProvider - ADD THIS STEP
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (!mounted) return;
+        
+        const flowerDataModule = await import('./context/FlowerDataContext');
+        if (!mounted) return;
+        setFlowerDataProvider(() => flowerDataModule.FlowerDataProvider);
+        
+        // Step 4: Load CartProvider
         await new Promise(resolve => setTimeout(resolve, 200));
         if (!mounted) return;
         
@@ -101,7 +89,7 @@ const MainApp = React.memo(() => {
         if (!mounted) return;
         setCartProvider(() => cartModule.CartProvider);
         
-        // Step 4: Load Navigator
+        // Step 5: Load Navigator
         await new Promise(resolve => setTimeout(resolve, 200));
         if (!mounted) return;
         
@@ -109,7 +97,6 @@ const MainApp = React.memo(() => {
         if (!mounted) return;
         setAppNavigator(() => navModule.default);
         
-        // All loaded
         if (mounted) {
           setAllLoaded(true);
         }
@@ -125,8 +112,8 @@ const MainApp = React.memo(() => {
     };
   }, []);
 
-  // Show loading while modules load
-  if (!allLoaded || !SafeAreaProvider || !AuthProvider || !CartProvider || !AppNavigator) {
+  // ADD FlowerDataProvider to the check
+  if (!allLoaded || !SafeAreaProvider || !AuthProvider || !FlowerDataProvider || !CartProvider || !AppNavigator) {
     return <LoadingScreen />;
   }
 
@@ -137,9 +124,11 @@ const MainApp = React.memo(() => {
         barStyle="light-content" 
       />
       <AuthProvider>
-        <CartProvider>
-          <AppNavigator />
-        </CartProvider>
+        <FlowerDataProvider>
+          <CartProvider>
+            <AppNavigator />
+          </CartProvider>
+        </FlowerDataProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );
@@ -149,11 +138,9 @@ const App = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Critical: Wait for RN event system to fully initialize
-    // This delay prevents the RCTEventEmitter crash
     const timer = setTimeout(() => {
       setIsReady(true);
-    }, 3000); // 3 second delay for safety
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);

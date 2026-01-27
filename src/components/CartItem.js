@@ -1,4 +1,4 @@
-// Enhanced Cart Item Component
+// Enhanced Cart Item Component - With Firebase Storage Image Support
 // src/components/CartItem.js
 import React from 'react';
 import {
@@ -12,8 +12,45 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SIZES, SHADOWS } from '../utils/theme';
 import { useCart } from '../context/CartContext';
 
+// Default placeholder image
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1518882605630-8eb548fe0eff?w=400';
+
+/**
+ * Helper function to get the best available image URL
+ * Prioritizes imageUrl (Firebase Storage) over image (local path)
+ */
+const getImageUrl = (item) => {
+  if (!item) return PLACEHOLDER_IMAGE;
+  
+  // Check for displayImage first (set when adding to cart)
+  if (item.displayImage && !item.displayImage.startsWith('/')) {
+    return item.displayImage;
+  }
+  
+  // Check selectedColor for image
+  if (item.selectedColor) {
+    if (item.selectedColor.imageUrl) return item.selectedColor.imageUrl;
+    if (item.selectedColor.displayImage && !item.selectedColor.displayImage.startsWith('/')) {
+      return item.selectedColor.displayImage;
+    }
+    if (item.selectedColor.image && !item.selectedColor.image.startsWith('/')) {
+      return item.selectedColor.image;
+    }
+  }
+  
+  // Check item's own imageUrl
+  if (item.imageUrl) return item.imageUrl;
+  
+  // Check item's image field
+  if (item.image && !item.image.startsWith('/')) {
+    return item.image;
+  }
+  
+  return PLACEHOLDER_IMAGE;
+};
+
 const CartItem = ({ item }) => {
-  const { increaseQuantity, decreaseQuantity, removeFromCart } = useCart();
+  const { removeFromCart } = useCart();
 
   const formatDate = (date) => {
     if (!date) return 'Not set';
@@ -25,6 +62,9 @@ const CartItem = ({ item }) => {
     });
   };
 
+  // Get the best image URL
+  const imageUrl = getImageUrl(item);
+
   // Check if this is a new-style cart item with selections
   const hasSelections = item.selectedColor || item.selectedSize;
 
@@ -33,9 +73,10 @@ const CartItem = ({ item }) => {
       {/* Product Image */}
       <View style={styles.imageContainer}>
         <Image 
-          source={{ uri: item.selectedColor?.image || item.image || 'https://via.placeholder.com/100' }}
+          source={{ uri: imageUrl }}
           style={styles.image}
           resizeMode="cover"
+          defaultSource={{ uri: PLACEHOLDER_IMAGE }}
         />
         {item.selectedColor && (
           <View style={[styles.colorDot, { backgroundColor: item.selectedColor.hex }]} />
@@ -72,53 +113,12 @@ const CartItem = ({ item }) => {
           </View>
         )}
 
-        {/* Price Info */}
-        <View style={styles.priceRow}>
-          {hasSelections ? (
-            <View style={styles.priceInfo}>
-              <Text style={styles.pricePerUnit}>₹{item.pricePerStem}/stem</Text>
-              <Text style={styles.quantity}>× {item.quantity} stems</Text>
-            </View>
-          ) : (
-            <Text style={styles.price}>₹{item.price}</Text>
-          )}
-          
-          {/* Quantity Controls */}
-          {!hasSelections && (
-            <View style={styles.quantityControls}>
-              <TouchableOpacity 
-                style={styles.qtyBtn}
-                onPress={() => decreaseQuantity(item.id)}
-              >
-                <Icon name="minus" size={16} color={COLORS.primary} />
-              </TouchableOpacity>
-              
-              <Text style={styles.quantityText}>{item.quantity}</Text>
-              
-              <TouchableOpacity 
-                style={styles.qtyBtn}
-                onPress={() => increaseQuantity(item.id)}
-              >
-                <Icon name="plus" size={16} color={COLORS.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Discount Badge */}
-        {item.discount > 0 && (
-          <View style={styles.discountBadge}>
-            <Icon name="tag-outline" size={12} color={COLORS.success} />
-            <Text style={styles.discountText}>{Math.round(item.discount * 100)}% off applied</Text>
+        {/* Quantity Display */}
+        <View style={styles.quantityContainer}>
+          <View style={styles.quantityBadge}>
+            <Text style={styles.quantityNumber}>{item.quantity}</Text>
+            <Text style={styles.quantityLabel}>stems</Text>
           </View>
-        )}
-
-        {/* Total */}
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Subtotal</Text>
-          <Text style={styles.totalPrice}>
-            ₹{(item.totalPrice || (item.price * item.quantity)).toLocaleString('en-IN')}
-          </Text>
         </View>
       </View>
 
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: SIZES.radiusSM,
     overflow: 'hidden',
-    backgroundColor: COLORS.cream,
+    backgroundColor: COLORS.cream || '#f5f5f5',
     position: 'relative',
   },
   image: {
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   selectionTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.backgroundDark,
+    backgroundColor: COLORS.backgroundDark || '#f0f0f0',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
@@ -207,91 +207,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   dateText: {
     fontSize: SIZES.xs,
     color: COLORS.primary,
     fontWeight: '500',
   },
-  priceRow: {
+  quantityContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  priceInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  pricePerUnit: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  quantity: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  price: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
-  },
-  quantityControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cream,
-    borderRadius: SIZES.radiusSM,
-    padding: 2,
-  },
-  qtyBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantityText: {
-    fontSize: SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginHorizontal: 12,
-    minWidth: 20,
-    textAlign: 'center',
-  },
-  discountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.successLight,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    marginBottom: 6,
-    gap: 4,
-  },
-  discountText: {
-    fontSize: 10,
-    color: COLORS.success,
-    fontWeight: '500',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
-  totalLabel: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
+  quantityBadge: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: COLORS.primaryMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: SIZES.radius,
+    gap: 4,
   },
-  totalPrice: {
-    fontSize: SIZES.lg,
+  quantityNumber: {
+    fontSize: SIZES.xl,
     fontWeight: '700',
     color: COLORS.primary,
+  },
+  quantityLabel: {
+    fontSize: SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
   removeBtn: {
     position: 'absolute',
@@ -300,7 +247,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: COLORS.errorLight,
+    backgroundColor: COLORS.errorLight || '#ffebee',
     justifyContent: 'center',
     alignItems: 'center',
   },

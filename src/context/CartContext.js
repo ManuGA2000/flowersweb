@@ -1,5 +1,5 @@
-// Cart Context - Shopping cart state management
-// src\context\CartContext.js
+// Cart Context - Shopping cart state management (No Pricing)
+// src/context/CartContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -47,12 +47,19 @@ export const CartProvider = ({ children }) => {
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
     setCartItems(prevItems => {
-      const existingIndex = prevItems.findIndex(item => item.id === product.id);
+      // Create a unique key based on product id, color, and size
+      const itemKey = `${product.id}-${product.selectedColor?.id || 'nocolor'}-${product.selectedSize?.id || 'nosize'}`;
+      
+      const existingIndex = prevItems.findIndex(item => {
+        const existingKey = `${item.id}-${item.selectedColor?.id || 'nocolor'}-${item.selectedSize?.id || 'nosize'}`;
+        return existingKey === itemKey;
+      });
       
       if (existingIndex >= 0) {
-        // Update quantity if item exists
+        // Update quantity if item with same options exists
         const updated = [...prevItems];
-        updated[existingIndex].quantity += quantity;
+        updated[existingIndex].quantity = quantity; // Replace quantity instead of adding
+        updated[existingIndex].requiredDate = product.requiredDate; // Update delivery date
         return updated;
       } else {
         // Add new item
@@ -112,14 +119,14 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Get cart total
-  const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  // Get total stems count
+  const getTotalStems = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
-  // Get cart item count
+  // Get cart item count (number of unique items)
   const getCartCount = () => {
-    return cartItems.reduce((count, item) => count + item.quantity, 0);
+    return cartItems.length;
   };
 
   // Check if item is in cart
@@ -143,7 +150,7 @@ export const CartProvider = ({ children }) => {
       increaseQuantity,
       decreaseQuantity,
       clearCart,
-      getCartTotal,
+      getTotalStems,
       getCartCount,
       isInCart,
       getItemQuantity,

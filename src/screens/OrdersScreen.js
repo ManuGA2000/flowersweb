@@ -1,4 +1,5 @@
-// src\screens\OrdersScreen.js
+// Orders Screen - No Pricing
+// src/screens/OrdersScreen.js
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -22,7 +23,19 @@ const OrderCard = ({ order, onPress }) => {
       case 'processing': return COLORS.warning;
       case 'delivered': return COLORS.primary;
       case 'cancelled': return COLORS.error;
+      case 'pending': return COLORS.accent;
       default: return COLORS.textSecondary;
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'confirmed': return 'Confirmed';
+      case 'processing': return 'Processing';
+      case 'delivered': return 'Delivered';
+      case 'cancelled': return 'Cancelled';
+      case 'pending': return 'Pending Review';
+      default: return 'Pending';
     }
   };
 
@@ -38,6 +51,9 @@ const OrderCard = ({ order, onPress }) => {
     });
   };
 
+  // Calculate total stems
+  const totalStems = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+
   return (
     <TouchableOpacity style={styles.orderCard} onPress={onPress}>
       <View style={styles.orderHeader}>
@@ -47,16 +63,19 @@ const OrderCard = ({ order, onPress }) => {
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) + '20' }]}>
           <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>
-            {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'}
+            {getStatusLabel(order.status)}
           </Text>
         </View>
       </View>
 
       <View style={styles.orderItems}>
         {order.items?.slice(0, 2).map((item, index) => (
-          <Text key={index} style={styles.itemText} numberOfLines={1}>
-            {item.quantity}× {item.name}
-          </Text>
+          <View key={index} style={styles.itemRow}>
+            <Text style={styles.itemText} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.itemQuantity}>{item.quantity} stems</Text>
+          </View>
         ))}
         {order.items?.length > 2 && (
           <Text style={styles.moreItems}>+{order.items.length - 2} more items</Text>
@@ -64,8 +83,11 @@ const OrderCard = ({ order, onPress }) => {
       </View>
 
       <View style={styles.orderFooter}>
-        <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalAmount}>₹{order.totalAmount?.toFixed(2)}</Text>
+        <View style={styles.totalStemsContainer}>
+          <Icon name="flower" size={16} color={COLORS.primary} />
+          <Text style={styles.totalStemsLabel}>Total:</Text>
+          <Text style={styles.totalStemsValue}>{totalStems.toLocaleString('en-IN')} stems</Text>
+        </View>
       </View>
 
       {order.whatsappSent && (
@@ -218,27 +240,49 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   itemText: {
+    flex: 1,
     fontSize: SIZES.md,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
+    color: COLORS.text,
+  },
+  itemQuantity: {
+    fontSize: SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginLeft: 12,
   },
   moreItems: {
     fontSize: SIZES.sm,
     color: COLORS.textLight,
     fontStyle: 'italic',
+    marginTop: 4,
   },
   orderFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
-  totalLabel: {
-    fontSize: SIZES.md,
+  totalStemsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: SIZES.radius,
+    gap: 6,
+  },
+  totalStemsLabel: {
+    fontSize: SIZES.sm,
     color: COLORS.textSecondary,
   },
-  totalAmount: {
-    fontSize: SIZES.xl,
+  totalStemsValue: {
+    fontSize: SIZES.lg,
     fontWeight: '700',
     color: COLORS.primary,
   },
