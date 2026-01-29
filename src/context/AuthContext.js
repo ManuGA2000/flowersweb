@@ -1,17 +1,9 @@
-// Auth Context - Global authentication state
-// src/context/AuthContext.js
-// With delayed Firebase initialization to prevent RCTEventEmitter crash
+// src/context/AuthContext.js - Add environment detection
 
 import React, { createContext, useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { Platform } from 'react-native';
 
-const AuthContext = createContext({
-  user: null,
-  userProfile: null,
-  loading: true,
-  refreshProfile: () => {},
-  isLoggedIn: false,
-  isInitialized: false,
-});
+const isSimulator = Platform.OS === 'ios' && !Platform.isPad; // Basic check
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -32,94 +24,75 @@ export const AuthProvider = ({ children }) => {
       try {
         console.log('🔥 Initializing Firebase Auth...');
         
-        // Dynamic import to delay Firebase loading
-        const authService = await import('../services/authService');
-        authServiceRef.current = authService;
-        
-        if (!mountedRef.current) return;
-        
-        // Additional delay after import
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (!mountedRef.current) return;
-        
-        console.log('🔥 Setting up auth state listener...');
-        
-        unsubscribeRef.current = authService.onAuthStateChanged(async (firebaseUser) => {
+        // CRITICAL: Try/Catch to handle Appetize.io keychain issues
+        try {
+          const authService = await import('../services/authService');
+          authServiceRef.current = authService;
+          
           if (!mountedRef.current) return;
           
-          console.log('🔥 Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+          // Additional delay after import
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
-          if (firebaseUser) {
-            setUser(firebaseUser);
-            try {
-              const result = await authService.getUserProfile(firebaseUser.uid);
-              if (mountedRef.current && result && result.success) {
-                setUserProfile(result.data);
+          if (!mountedRef.current) return;
+          
+          console.log('🔥 Setting up auth state listener...');
+          
+          // GUARD: Wrap keychain access in error handler
+          unsubscribeRef.current = authService.onAuthStateChanged(async (firebaseUser) => {
+            if (!mountedRef.current) return;
+            
+            console.log('🔥 Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+            
+            if (firebaseUser) {
+              setUser(firebaseUser);
+              try {
+                const result = await authService.getUserProfile(firebaseUser.uid);
+                if (mountedRef.current && result && result.success) {
+                  setUserProfile(result.data);
+                }
+              } catch (profileError) {
+                console.log('Error fetching profile:', profileError);
               }
-            } catch (profileError) {
-              console.log('Error fetching profile:', profileError);
+            } else {
+              setUser(null);
+              setUserProfile(null);
             }
-          } else {
-            setUser(null);
-            setUserProfile(null);
-          }
-          
+            
+            if (mountedRef.current) {
+              setLoading(false);
+              setIsInitialized(true);
+            }
+          });
+        } catch (keychainError) {
+          // Appetize.io or simulator keychain error
+          console.warn('⚠️ Keychain access failed (normal on simulators/Appetize):', keychainError);
           if (mountedRef.current) {
             setLoading(false);
             setIsInitialized(true);
+            // Continue without keychain (guest mode)
           }
-        });
-        
-        console.log('🔥 Auth listener set up successfully');
-        
+        }
       } catch (error) {
-        console.log('Auth initialization error:', error);
+        console.error('Firebase init error:', error);
         if (mountedRef.current) {
           setLoading(false);
           setIsInitialized(true);
         }
       }
-    }, 2000); // 2 second delay before Firebase Auth
+    }, 1000); // Initial delay before Firebase init
 
     return () => {
       mountedRef.current = false;
       clearTimeout(initTimer);
       if (unsubscribeRef.current) {
-        try {
-          unsubscribeRef.current();
-        } catch (e) {
-          // Ignore cleanup errors
-        }
+        unsubscribeRef.current();
       }
     };
   }, []);
 
-  const refreshProfile = useCallback(async () => {
-    if (!user || !mountedRef.current) return;
-    
-    try {
-      const authService = authServiceRef.current || await import('../services/authService');
-      const result = await authService.getUserProfile(user.uid);
-      if (mountedRef.current && result && result.success) {
-        setUserProfile(result.data);
-      }
-    } catch (error) {
-      console.log('Refresh profile error:', error);
-    }
-  }, [user]);
-
-  const value = {
-    user,
-    userProfile,
-    loading,
-    refreshProfile,
-    isLoggedIn: !!user,
-    isInitialized,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, userProfile, loading, isLoggedIn, isInitialized }}>
       {children}
     </AuthContext.Provider>
   );
@@ -128,9 +101,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };
-
-export default AuthContext;

@@ -19,6 +19,8 @@
     NSLog(@"✅ Firebase configured successfully in AppDelegate");
   } @catch (NSException *exception) {
     NSLog(@"⚠️ Firebase configuration error: %@", exception.reason);
+    // Don't let Firebase error crash the app
+    // Continue with app initialization
   }
   
   self.moduleName = @"GrowteqFlowers";

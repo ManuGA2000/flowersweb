@@ -30,27 +30,24 @@ target 'GrowteqFlowers' do
   pod 'GoogleUtilities', :modular_headers => true
   pod 'GTMSessionFetcher', :modular_headers => true
 
-  post_install do |installer|
-    react_native_post_install(
-      installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false
-    )
+post_install do |installer|
+  react_native_post_install(
+    installer,
+    config[:reactNativePath],
+    :mac_catalyst_enabled => false
+  )
 
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-        config.build_settings['SWIFT_VERSION'] = '5.0'
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-      end
-    end
-
-    installer.generated_projects.each do |project|
-      project.targets.each do |target|
-        target.build_configurations.each do |config|
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-        end
-      end
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      # Ensure keychain is enabled
+      config.build_settings['DEVELOPMENT_TEAM'] = 'YOUR_TEAM_ID'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      config.build_settings['SWIFT_VERSION'] = '5.0'
+      config.build_settings['DEFINES_MODULE'] = 'YES'
+      
+      # Critical for keychain access
+      config.build_settings['CODE_SIGN_IDENTITY'] = 'iPhone Developer'
     end
   end
+end
 end
