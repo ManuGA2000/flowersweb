@@ -1,4 +1,5 @@
-// Screens Index
+// Screens Index - Export all screens
+// src/screens/index.js
 
 export { default as SplashScreen } from './SplashScreen';
 export { default as LoginScreen } from './LoginScreen';
@@ -11,3 +12,4 @@ export { default as CheckoutScreen } from './CheckoutScreen';
 export { default as OrderSuccessScreen } from './OrderSuccessScreen';
 export { default as OrdersScreen } from './OrdersScreen';
 export { default as ProfileScreen } from './ProfileScreen';
+export { default as GalleryScreen } from './GalleryScreen';

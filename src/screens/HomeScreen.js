@@ -1,6 +1,6 @@
-// Enhanced Home Screen - Uses Firebase Data with proper image handling
+// Home Screen - Updated UI matching screenshot design
 // src/screens/HomeScreen.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,94 +11,99 @@ import {
   Image,
   Dimensions,
   ActivityIndicator,
+  TextInput,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SIZES, SHADOWS } from '../utils/theme';
-import { Header, SearchBar, ProductCard, Loader, EmptyState } from '../components';
-import { CategoryList } from '../components/CategoryChip';
 import { useAuth } from '../context/AuthContext';
 import { useFlowerData } from '../context/FlowerDataContext';
+import { Header } from '../components';
+
 
 const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 48) / 2;
 
 // Default placeholder image
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1518882605630-8eb548fe0eff?w=400';
 
-// Section Header Component
-const SectionHeader = ({ title, subtitle }) => (
-  <View style={styles.sectionHeader}>
-    <View>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {subtitle && <Text style={styles.sectionSubtitle}>{subtitle}</Text>}
-    </View>
-  </View>
-);
+// Flower type descriptions
+const flowerDescriptions = {
+  roses: 'Classic elegance',
+  chrysanthemums: 'Vibrant blooms',
+  gypsophila: 'Delicate filler',
+  lisianthus: 'Rose-like beauty',
+  limonium: 'Long-lasting color',
+  carnation: 'Timeless charm',
+  eucalyptus: 'Fresh foliage',
+  'song-of-india': 'Tropical accent',
+  'song-of-jamaica': 'Exotic foliage',
+  eustoma: 'Elegant petals',
+};
+
+// Category mapping for flowers
+const FLOWER_CATEGORIES = {
+  roses: 'flowers',
+  chrysanthemums: 'flowers',
+  gypsophila: 'flowers',
+  lisianthus: 'flowers',
+  limonium: 'flowers',
+  carnation: 'flowers',
+  eustoma: 'flowers',
+  eucalyptus: 'foliage',
+  'song-of-india': 'foliage',
+  'song-of-jamaica': 'foliage',
+};
+
+// Flower Card Component
+const FlowerCard = ({ product, onPress, getImageUrl }) => {
+  const imageUrl = getImageUrl(product);
+  const description = flowerDescriptions[product.type] || product.description || 'Fresh flowers';
+
+  return (
+    <TouchableOpacity
+      style={styles.flowerCard}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
+      <Image
+        source={{ uri: imageUrl }}
+        style={styles.flowerImage}
+        resizeMode="cover"
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.6)']}
+        style={styles.flowerGradient}
+      />
+      <View style={styles.flowerInfo}>
+        <Text style={styles.flowerName}>{product.name}</Text>
+        <Text style={styles.flowerDescription}>{description}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const HomeScreen = ({ navigation }) => {
   const { userProfile } = useAuth();
-  const { 
-    products: allProducts, 
-    categories, 
-    featuredProducts,
+  const {
+    products: allProducts,
     loading: dataLoading,
     error: dataError,
     refreshData,
-    searchProducts,
-    getProductsByCategory,
     getProductColors,
-    getProductImage, // New helper function
+    getProductImage,
   } = useFlowerData();
 
-  const [displayProducts, setDisplayProducts] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTab, setSelectedTab] = useState('flowers'); // 'flowers' or 'foliage'
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [searching, setSearching] = useState(false);
-
-  // Update display products when all products change
-  useEffect(() => {
-    setDisplayProducts(allProducts);
-  }, [allProducts]);
-
-  const handleCategorySelect = useCallback(async (categoryId) => {
-    setSelectedCategory(categoryId);
-    setSearchQuery('');
-    
-    const filtered = await getProductsByCategory(categoryId);
-    setDisplayProducts(filtered);
-  }, [getProductsByCategory]);
-
-  const handleSearch = useCallback(async (query) => {
-    setSearchQuery(query);
-    setSearching(true);
-    
-    try {
-      if (!query.trim()) {
-        const filtered = await getProductsByCategory(selectedCategory);
-        setDisplayProducts(filtered);
-      } else {
-        const results = await searchProducts(query);
-        setDisplayProducts(results);
-      }
-    } finally {
-      setSearching(false);
-    }
-  }, [selectedCategory, getProductsByCategory, searchProducts]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    setSearchQuery('');
-    setSelectedCategory('all');
-    await refreshData();
-    setRefreshing(false);
-  }, [refreshData]);
 
   /**
    * Helper function to get the best available image URL for a product
    */
   const getImageUrl = useCallback((product) => {
-    // Use the context helper if available
     if (getProductImage) {
       const url = getProductImage(product);
       if (url && !url.startsWith('/')) {
@@ -106,118 +111,71 @@ const HomeScreen = ({ navigation }) => {
       }
     }
 
-    // Get colors for the product type
     const colors = getProductColors(product.type);
-    
     if (colors && colors.length > 0) {
       const firstColor = colors[0];
-      // Prioritize imageUrl (Firebase Storage) over image (local path)
       if (firstColor.imageUrl) return firstColor.imageUrl;
       if (firstColor.displayImage && !firstColor.displayImage.startsWith('/')) {
         return firstColor.displayImage;
       }
     }
-    
-    // Check product's own image fields
+
     if (product.imageUrl) return product.imageUrl;
     if (product.image && !product.image.startsWith('/')) return product.image;
-    
-    // Return placeholder
+
     return PLACEHOLDER_IMAGE;
   }, [getProductColors, getProductImage]);
 
-  const renderProduct = ({ item }) => {
-    // Get colors for the product with proper image URLs
-    const colors = getProductColors(item.type);
-    const productImage = getImageUrl(item);
-    
-    const productWithImage = { 
-      ...item, 
-      colors,
-      displayImage: productImage,
-    };
-    
-    return (
-      <ProductCard
-        product={productWithImage}
-        onPress={() => navigation.navigate('ProductDetail', { product: item })}
-      />
-    );
-  };
+  // Filter products by selected tab and search query
+  const filteredProducts = useMemo(() => {
+    let filtered = allProducts.filter(product => {
+      const category = FLOWER_CATEGORIES[product.type] || 'flowers';
+      return category === selectedTab;
+    });
 
-  const renderFeaturedProduct = ({ item }) => {
-    const productImage = getImageUrl(item);
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.name?.toLowerCase().includes(query) ||
+        product.type?.toLowerCase().includes(query)
+      );
+    }
 
-    return (
-      <TouchableOpacity 
-        style={styles.featuredCard}
-        onPress={() => navigation.navigate('ProductDetail', { product: item })}
-        activeOpacity={0.9}
-      >
-        <Image
-          source={{ uri: productImage }}
-          style={styles.featuredImage}
-          resizeMode="cover"
-          defaultSource={{ uri: PLACEHOLDER_IMAGE }}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.7)']}
-          style={styles.featuredGradient}
-        />
-        <View style={styles.featuredInfo}>
-          <Text style={styles.featuredName} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.featuredBadgeRow}>
-            <View style={styles.inStockBadge}>
-              <Text style={styles.inStockText}>
-                {item.inStock ? 'In Stock' : 'Out of Stock'}
-              </Text>
-            </View>
-          </View>
-        </View>
-        {item.featured && (
-          <View style={styles.featuredBadge}>
-            <Icon name="star" size={10} color={COLORS.white} />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
+    return filtered;
+  }, [allProducts, selectedTab, searchQuery]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  };
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshData();
+    setRefreshing(false);
+  }, [refreshData]);
 
-  // Show loading state
+  const renderFlowerCard = ({ item }) => (
+    <FlowerCard
+      product={item}
+      onPress={() => navigation.navigate('ProductDetail', { product: item })}
+      getImageUrl={getImageUrl}
+    />
+  );
+
+  // Loading state
   if (dataLoading && !refreshing) {
     return (
-      <View style={styles.container}>
-        <Header 
-          title={`${getGreeting()}, ${userProfile?.name?.split(' ')[0] || 'Guest'}`}
-          subtitle="Find perfect flowers for every occasion"
-          navigation={navigation}
-          showSearch={false}
-        />
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor={COLORS.background} barStyle="dark-content" />
         <View style={styles.loadingContainer}>
-          <Loader />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Loading flowers...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  // Show error state
+  // Error state
   if (dataError && !dataLoading) {
     return (
-      <View style={styles.container}>
-        <Header 
-          title={`${getGreeting()}, ${userProfile?.name?.split(' ')[0] || 'Guest'}`}
-          subtitle="Find perfect flowers for every occasion"
-          navigation={navigation}
-          showSearch={false}
-        />
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor={COLORS.background} barStyle="dark-content" />
         <View style={styles.errorContainer}>
           <Icon name="cloud-off-outline" size={60} color={COLORS.textLight} />
           <Text style={styles.errorTitle}>Connection Error</Text>
@@ -227,107 +185,101 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  // Filter categories (exclude 'all' for display in chips)
-  const displayCategories = categories.filter(c => c.id !== 'all');
-
   return (
-    <View style={styles.container}>
-      <Header 
-        title={`${getGreeting()}, ${userProfile?.name?.split(' ')[0] || 'Guest'}`}
-        subtitle="Find perfect flowers for every occasion"
-        navigation={navigation}
-        showSearch={false}
-      />
-      
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor={COLORS.background} barStyle="dark-content" />
+    <Header
+      title={`Good ${new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, ${
+        userProfile?.name?.split(' ')[0] || 'Guest'
+      }`}
+      subtitle="Find perfect flowers for every occasion"
+      navigation={navigation}
+      showSearch={false}
+    />
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Icon name="magnify" size={22} color={COLORS.textLight} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search flowers..."
+          placeholderTextColor={COLORS.textLight}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Icon name="close-circle" size={20} color={COLORS.textLight} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Category Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === 'flowers' && styles.tabActive]}
+          onPress={() => setSelectedTab('flowers')}
+        >
+          <Icon
+            name="flower"
+            size={18}
+            color={selectedTab === 'flowers' ? COLORS.white : COLORS.primary}
+          />
+          <Text style={[styles.tabText, selectedTab === 'flowers' && styles.tabTextActive]}>
+            Flowers & Fillers
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === 'foliage' && styles.tabActive]}
+          onPress={() => setSelectedTab('foliage')}
+        >
+          <Icon
+            name="leaf"
+            size={18}
+            color={selectedTab === 'foliage' ? COLORS.white : COLORS.primary}
+          />
+          <Text style={[styles.tabText, selectedTab === 'foliage' && styles.tabTextActive]}>
+            Foliage & Leaves
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Section Header */}
+      <View style={styles.sectionHeader}>
+        <Icon name="star-outline" size={20} color={COLORS.primary} />
+        <Text style={styles.sectionTitle}>Popular Flowers</Text>
+      </View>
+
+      {/* Flower Grid */}
       <FlatList
-        data={displayProducts}
-        renderItem={renderProduct}
+        data={filteredProducts}
+        renderItem={renderFlowerCard}
         keyExtractor={item => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
-            colors={[COLORS.primary]} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
           />
         }
-        ListHeaderComponent={() => (
-          <View style={styles.headerContent}>
-            <SearchBar
-              value={searchQuery}
-              onChangeText={handleSearch}
-              onClear={() => handleSearch('')}
-              placeholder="Search flowers, colors..."
-            />
-
-            {searching && (
-              <View style={styles.searchingIndicator}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
-                <Text style={styles.searchingText}>Searching...</Text>
-              </View>
-            )}
-
-            {!searchQuery && featuredProducts.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader 
-                  title="Featured Flowers"
-                  subtitle="Handpicked for you"
-                />
-                <FlatList
-                  data={featuredProducts}
-                  renderItem={renderFeaturedProduct}
-                  keyExtractor={item => `featured-${item.id}`}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.horizontalList}
-                  scrollEnabled={true}
-                />
-              </View>
-            )}
-
-            {displayCategories.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader 
-                  title="Shop by Category"
-                  subtitle="Browse our collection"
-                />
-                <CategoryList
-                  categories={displayCategories}
-                  selectedId={selectedCategory}
-                  onSelect={handleCategorySelect}
-                />
-              </View>
-            )}
-
-            <View style={styles.productsHeader}>
-              <Text style={styles.productsTitle}>
-                {selectedCategory === 'all' 
-                  ? 'All Flowers' 
-                  : categories.find(c => c.id === selectedCategory)?.name || 'Products'}
-              </Text>
-              <Text style={styles.productsCount}>{displayProducts.length} items</Text>
-            </View>
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Icon name="flower-outline" size={48} color={COLORS.textLight} />
+            <Text style={styles.emptyTitle}>No flowers found</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery ? 'Try a different search term' : 'No flowers available in this category'}
+            </Text>
           </View>
         )}
-        ListEmptyComponent={() => (
-          <EmptyState 
-            title="No Flowers Found" 
-            message={searchQuery 
-              ? "Try a different search term" 
-              : "No flowers available in this category"
-            } 
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        scrollEventThrottle={16}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -379,19 +331,66 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: SIZES.md,
   },
-  headerContent: {
-    backgroundColor: COLORS.background,
-  },
-  searchingIndicator: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.small,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: SIZES.md,
+    color: COLORS.text,
+    marginLeft: 10,
+    paddingVertical: 0,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    gap: 12,
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.white,
+    gap: 6,
+  },
+  tabActive: {
+    backgroundColor: COLORS.primary,
+  },
+  tabText: {
+    fontSize: SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  tabTextActive: {
+    color: COLORS.white,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 12,
     gap: 8,
   },
-  searchingText: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
+  sectionTitle: {
+    fontSize: SIZES.md,
+    fontWeight: '600',
+    color: COLORS.text,
   },
   row: {
     justifyContent: 'space-between',
@@ -400,109 +399,59 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 20,
   },
-  section: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: SIZES.xl,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  sectionSubtitle: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
-  horizontalList: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  featuredCard: {
-    width: width * 0.4,
-    height: 180,
-    borderRadius: SIZES.radius,
+  flowerCard: {
+    width: CARD_WIDTH,
+    height: CARD_WIDTH * 1.2,
+    borderRadius: SIZES.radiusLG,
     overflow: 'hidden',
+    marginBottom: 12,
     backgroundColor: COLORS.white,
     ...SHADOWS.medium,
-    marginRight: 12,
   },
-  featuredImage: {
+  flowerImage: {
     width: '100%',
     height: '100%',
   },
-  featuredGradient: {
+  flowerGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
+    height: '50%',
   },
-  featuredInfo: {
+  flowerInfo: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     padding: 12,
   },
-  featuredName: {
+  flowerName: {
     fontSize: SIZES.md,
     fontWeight: '700',
     color: COLORS.white,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  featuredBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inStockBadge: {
-    backgroundColor: 'rgba(40, 167, 69, 0.8)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  inStockText: {
+  flowerDescription: {
     fontSize: SIZES.xs,
-    color: COLORS.white,
-    fontWeight: '600',
+    color: 'rgba(255,255,255,0.85)',
   },
-  featuredBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.accent,
+  emptyContainer: {
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 60,
   },
-  productsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: SIZES.radiusLG,
-    borderTopRightRadius: SIZES.radiusLG,
-    marginTop: 8,
-  },
-  productsTitle: {
+  emptyTitle: {
     fontSize: SIZES.lg,
-    fontWeight: '700',
+    fontWeight: '600',
     color: COLORS.text,
+    marginTop: 16,
+    marginBottom: 8,
   },
-  productsCount: {
+  emptyText: {
     fontSize: SIZES.sm,
     color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });
 

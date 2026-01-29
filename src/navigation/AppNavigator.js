@@ -22,6 +22,7 @@ import {
   OrderSuccessScreen,
   OrdersScreen,
   ProfileScreen,
+  GalleryScreen,
 } from '../screens';
 
 const Stack = createNativeStackNavigator();
@@ -37,16 +38,16 @@ const TabNavigator = ({ navigation }) => {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor:  COLORS.textLight,
+        tabBarInactiveTintColor: COLORS.textLight,
         tabBarStyle: {
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
           backgroundColor: COLORS.white,
           borderTopWidth: 1,
-          borderTopColor:  COLORS.border,
+          borderTopColor: COLORS.border,
         },
-        tabBarLabelStyle:  {
+        tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
         },
@@ -73,6 +74,16 @@ const TabNavigator = ({ navigation }) => {
         }}
       />
       <Tab.Screen
+        name="Gallery"
+        component={GalleryScreen}
+        options={{
+          tabBarLabel: 'Gallery',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="image-multiple-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Cart"
         component={CartScreen}
         options={{
@@ -80,7 +91,7 @@ const TabNavigator = ({ navigation }) => {
           tabBarIcon: ({ color, size }) => (
             <Icon name="cart-outline" size={size} color={color} />
           ),
-          tabBarBadge: cartCount > 0 ?  cartCount : null,
+          tabBarBadge: cartCount > 0 ? cartCount : null,
           tabBarBadgeStyle: {
             backgroundColor: COLORS.accent,
             color: COLORS.textWhite,
@@ -129,14 +140,14 @@ const AppNavigator = () => {
           name="Login" 
           component={LoginScreen}
           options={{
-            animationEnabled:  true,
+            animationEnabled: true,
           }}
         />
         <Stack.Screen 
           name="SignUp" 
           component={SignUpScreen}
           options={{
-            animationEnabled:  true,
+            animationEnabled: true,
           }}
         />
         <Stack.Screen 
@@ -148,11 +159,11 @@ const AppNavigator = () => {
         />
         <Stack.Group
           screenOptions={{
-            presentation:  'card',
+            presentation: 'card',
             animationEnabled: true,
           }}
         >
-          <Stack. Screen 
+          <Stack.Screen 
             name="MainTabs" 
             component={TabNavigator}
             options={{
@@ -162,14 +173,6 @@ const AppNavigator = () => {
           <Stack.Screen 
             name="ProductDetail" 
             component={ProductDetailScreen}
-            options={{
-              animationEnabled: true,
-              cardStyle: { backgroundColor: COLORS.background },
-            }}
-          />
-          <Stack.Screen 
-            name="Cart" 
-            component={CartScreen}
             options={{
               animationEnabled: true,
               cardStyle: { backgroundColor: COLORS.background },
@@ -188,7 +191,7 @@ const AppNavigator = () => {
             component={OrderSuccessScreen}
             options={{
               animationEnabled: true,
-              cardStyle:  { backgroundColor: COLORS.background },
+              cardStyle: { backgroundColor: COLORS.background },
             }}
           />
         </Stack.Group>
